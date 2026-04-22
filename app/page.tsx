@@ -5,34 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
 
-export const calculateDaysLeft = (dueDate: Date): number => {
-  const now = new Date();
-  const diff = dueDate.getTime() - now.getTime();
-  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-};
-
 const IBAN = "IT46K0347501605CC0011358676";
 const PAYPAL_EMAIL = "antonio_caringella@libero.it";
 const YT_VIDEO_ID = "lp-EO5I60KA";
 
-const PRIMARY = "text-sky-900";
-const BTN = "bg-blue-500 hover:bg-blue-600 text-white rounded-full py-3 text-lg shadow-md";
-const CARD = "bg-white rounded-3xl shadow-xl";
+const PRIMARY = "text-blue-800";
+const BTN =
+  "bg-blue-500 hover:bg-blue-600 text-white rounded-full py-4 text-lg shadow-md w-full";
+const CARD =
+  "bg-sky-50 rounded-3xl shadow-lg p-5"; // 👈 celeste chiaro
 
 export default function BabyRegistry() {
-  const dueDate = useMemo(() => new Date("2026-10-09"), []);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
-
-  const daysLeft = useMemo(() => calculateDaysLeft(dueDate), [dueDate]);
-
-  const progress = useMemo(() => {
-    const total = 280;
-    return Math.min(100, Math.max(0, ((total - daysLeft) / total) * 100));
-  }, [daysLeft]);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -45,17 +33,8 @@ export default function BabyRegistry() {
         setMessages(data.map((m) => m.text));
       }
     };
-
     fetchMessages();
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem("baby_messages", JSON.stringify(messages));
-  }, [messages]);
-
-  useEffect(() => {
-    localStorage.setItem("baby_photos", JSON.stringify(photos));
-  }, [photos]);
 
   const addMessage = useCallback(async () => {
     if (!message.trim()) return;
@@ -78,7 +57,9 @@ export default function BabyRegistry() {
 
       await supabase.storage.from("photos").upload(fileName, file);
 
-      const { data } = supabase.storage.from("photos").getPublicUrl(fileName);
+      const { data } = supabase.storage
+        .from("photos")
+        .getPublicUrl(fileName);
 
       if (data?.publicUrl) {
         setPhotos((prev) => [data.publicUrl, ...prev]);
@@ -91,7 +72,30 @@ export default function BabyRegistry() {
     "Se vuoi darci una mano, useremo il tutto per affrontare al meglio questa nuova avventura!🦊";
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-6 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center p-4 relative overflow-hidden font-dreaming text-blue-800">
+      
+      {/* FONT CUSTOM */}
+      <style>{`
+        @font-face {
+          font-family: 'Dreaming';
+          src: url('/fonts/dreaming-outloud-pro.woff') format('woff');
+          font-weight: normal;
+          font-style: normal;
+        }
+        .font-dreaming {
+          font-family: 'Dreaming', cursive;
+        }
+
+        .float-slow {
+          animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+          100% { transform: translateY(0px); }
+        }
+      `}</style>
+
       {/* BACKGROUND */}
       <div
         className="absolute inset-0 bg-no-repeat bg-top bg-cover"
@@ -99,30 +103,10 @@ export default function BabyRegistry() {
       />
       <div className="absolute inset-0 bg-white/70" />
 
-      <style>{`
-        .animate-gradient {
-          background-size: 400% 400%;
-          animation: gradientMove 12s ease infinite;
-        }
-        @keyframes gradientMove {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        .float-slow {
-          animation: float 6s ease-in-out infinite;
-        }
-        @keyframes float {
-          0% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
-          100% { transform: translateY(0px); }
-        }
-      `}</style>
-
       {/* MUSIC */}
       <div className="absolute top-4 right-4 z-50">
-        <Button className={BTN} onClick={() => setMusicOn((v) => !v)}>
-          {musicOn ? "🔊 Musica" : "🔇 Musica"}
+        <Button onClick={() => setMusicOn((v) => !v)} className={BTN}>
+          {musicOn ? "🔊" : "🔇"}
         </Button>
       </div>
 
@@ -136,37 +120,25 @@ export default function BabyRegistry() {
       )}
 
       {/* HEADER */}
-      <div className="relative z-10 text-center mt-10 mb-6 px-4">
-        <h1 className="text-4xl md:text-5xl font-bold text-blue-800">
-          Benvenuto
-        </h1>
-        <h2 className="text-5xl md:text-6xl font-extrabold text-blue-700">
-          Michele
-        </h2>
+      <div className="relative z-10 text-center mt-10 mb-6 px-2">
+        <h1 className="text-3xl font-bold">Benvenuto</h1>
+        <h2 className="text-5xl font-extrabold mt-1">Michele</h2>
 
-        <p className="mt-4 text-base md:text-lg text-blue-900 leading-relaxed">
+        <p className="mt-4 text-base leading-relaxed">
           {babyMessage}
         </p>
 
-        <p className="mt-3 text-xl font-semibold text-blue-800">
+        <p className="mt-3 text-lg font-semibold">
           9 ottobre 2026
         </p>
-
-        <div className="w-full max-w-xs h-6 bg-white rounded-full mx-auto mt-4 flex items-center justify-center shadow">
-          <div
-            className="h-2 bg-blue-500 rounded-full"
-            style={{ width: `${progress}%` }}
-          />
-          <span className="absolute text-xs font-semibold text-blue-900">
-            {daysLeft} giorni
-          </span>
-        </div>
       </div>
 
       {/* CONTENT */}
-      <div className="w-full max-w-md mx-auto space-y-6 relative z-10 px-3">
-        <div className={`${CARD} p-5`}>
-          <h2 className={`text-xl font-semibold ${PRIMARY}`}>
+      <div className="w-full max-w-md space-y-5 z-10">
+
+        {/* MESSAGGIO */}
+        <div className={CARD}>
+          <h2 className={`text-lg font-semibold ${PRIMARY}`}>
             💝 Per iniziare questa avventura
           </h2>
 
@@ -174,26 +146,25 @@ export default function BabyRegistry() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Scrivi un messaggio"
+            className="mt-2"
           />
 
-          <Button
-            onClick={addMessage}
-            className={`mt-3 w-full rounded-full ${BTN}`}
-          >
+          <Button onClick={addMessage} className={`mt-3 ${BTN}`}>
             Invia 💙
           </Button>
 
           <Button
             type="button"
             onClick={() => setPaymentOpen(true)}
-            className={`mt-2 w-full rounded-full ${BTN}`}
+            className={`mt-2 ${BTN}`}
           >
             Dettagli contributo 🧸
           </Button>
         </div>
 
-        <div className={`${CARD} p-5`}>
-          <h2 className={`text-xl font-semibold ${PRIMARY} mb-3`}>
+        {/* FOTO */}
+        <div className={CARD}>
+          <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>
             📸 Ricordi
           </h2>
 
@@ -207,12 +178,12 @@ export default function BabyRegistry() {
           />
 
           <Button
-            className={`w-full rounded-full ${BTN}`}
+            className={BTN}
             onClick={() =>
               document.getElementById("galleryInput")?.click()
             }
           >
-            Condividi un ricordo per Miki
+            Condividi un ricordo
           </Button>
 
           <div className="grid grid-cols-3 gap-2 mt-4">
@@ -220,28 +191,23 @@ export default function BabyRegistry() {
               <img
                 key={i}
                 src={p}
-                className="w-full h-24 object-cover rounded-xl shadow"
+                className="w-full h-24 object-cover rounded-xl"
               />
             ))}
           </div>
         </div>
 
-        <div className={`${CARD} p-5`}>
-          <h2 className={`text-xl font-semibold ${PRIMARY} mb-3`}>
-            💌 Messaggi dolcissimi
+        {/* MESSAGGI */}
+        <div className={CARD}>
+          <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>
+            💌 Messaggi
           </h2>
 
           <div className="space-y-2">
-            {messages.length === 0 && (
-              <p className="text-sm text-gray-500">
-                Nessun messaggio ancora 💙
-              </p>
-            )}
-
             {messages.map((m, i) => (
               <div
                 key={i}
-                className="bg-sky-50 rounded-2xl p-3 text-sm text-sky-900"
+                className="bg-white rounded-xl p-3 text-sm"
               >
                 {m}
               </div>
@@ -260,25 +226,25 @@ export default function BabyRegistry() {
             className="bg-white rounded-3xl p-6 w-[90%] max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className={`text-xl font-semibold ${PRIMARY} mb-4`}>
-              🧸 Dettagli contributo
+            <h3 className="text-lg font-semibold mb-4">
+              🧸 Contributo
             </h3>
 
             <div className="space-y-3 text-sm">
-              <div className="p-3 bg-sky-50 rounded-2xl">
-                <p className="font-semibold">💳 IBAN</p>
-                <p className="break-all">{IBAN}</p>
+              <div className="p-3 bg-sky-50 rounded-xl">
+                <p className="font-semibold">IBAN</p>
+                <p>{IBAN}</p>
               </div>
 
-              <div className="p-3 bg-pink-50 rounded-2xl">
-                <p className="font-semibold">🅿️ PayPal</p>
-                <p className="break-all">{PAYPAL_EMAIL}</p>
+              <div className="p-3 bg-sky-50 rounded-xl">
+                <p className="font-semibold">PayPal</p>
+                <p>{PAYPAL_EMAIL}</p>
               </div>
             </div>
 
             <Button
               onClick={() => setPaymentOpen(false)}
-              className="mt-5 w-full rounded-full"
+              className="mt-5 w-full"
             >
               Chiudi
             </Button>
@@ -286,14 +252,5 @@ export default function BabyRegistry() {
         </div>
       )}
     </div>
-  );
-}
-
-if (typeof window !== "undefined") {
-  console.assert(
-    calculateDaysLeft(new Date(Date.now() + 86400000)) === 1
-  );
-  console.assert(
-    calculateDaysLeft(new Date(Date.now() - 86400000)) === 0
   );
 }
