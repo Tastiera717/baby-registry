@@ -17,26 +17,33 @@ const [messages, setMessages] = useState<string[]>([]);
 const [photos, setPhotos] = useState<string[]>([]); 
 const [paymentOpen, setPaymentOpen] = useState(false); 
 const [musicOn, setMusicOn] = useState(false); 
-useEffect(() => { 
-const fetchPhotos = async () => { 
-const { data, error } = await supabase 
-.from("Photos") 
-.select("*") 
-.order("created_at", { ascending: false }); 
-if (error) { 
-console.error(error); 
-return; 
-} 
-if (data) { 
-setPhotos(data.map((p) => p.url)); 
-} 
-}; 
-fetchPhotos(); 
-}, []); 
+useEffect(() => {
+  const fetchData = async () => {
+    // Scarica le Foto
+    const { data: photoData, error: photoError } = await supabase
+      .from("Photos")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (photoError) console.error("Errore foto:", photoError);
+    else if (photoData) setPhotos(photoData.map((p) => p.url));
+
+    // Scarica i Messaggi dalla tabella baby-registry
+    const { data: msgData, error: msgError } = await supabase
+      .from("baby-registry")
+      .select("text")
+      .order("created_at", { ascending: false });
+
+    if (msgError) console.error("Errore messaggi:", msgError);
+    else if (msgData) setMessages(msgData.map((m) => m.text));
+  };
+
+  fetchData();
+}, []);
 const addMessage = useCallback(async () => { 
 if (!message.trim()) return; 
 const newMessage = message.trim(); 
-const { error } = await supabase.from("messages").insert([ 
+const { error } = await supabase.from("baby-registry").insert([{ text: newMessage }]); 
 { text: newMessage }, 
 ]); 
 if (error) { 
@@ -52,10 +59,9 @@ const files = Array.from(e.target.files || []);
 for (const file of files) { 
 const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_"); 
 // ✅ path ULTRA SAFE (NO ERRORI SUPABASE) 
-const filePath = `uploads/${crypto.randomUUID()}-${safeName}`; 
+const filePath = `${crypto.randomUUID()}-${safeName}`; 
 // 📤 UPLOAD STORAGE 
-const { error: uploadError } = await supabase.storage 
-.from("Photos") 
+const { error: uploadError } = await supabase.storage.from("Photos") 
 .upload(filePath, file, { 
 cacheControl: "3600", 
 upsert: false, 
@@ -66,8 +72,7 @@ alert(uploadError.message);
 return; 
 } 
 // 🔗 PUBLIC URL 
-const { data: urlData } = supabase.storage 
-.from("Photos") 
+const { data: urlData } = supabase.storage.from("Photos") 
 .getPublicUrl(filePath); 
 const publicUrl = urlData?.publicUrl; 
 if (!publicUrl) { 
