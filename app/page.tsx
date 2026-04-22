@@ -52,10 +52,10 @@ const addMessage = useCallback(async () => {
   ]);
 
   if (error) {
-    console.error(error);
-    alert("Errore invio messaggio");
-    return;
-  }
+  console.error("SUPABASE ERROR:", error);
+  alert(error.message);
+  return;
+}
 
   setMessages((prev) => [newMessage, ...prev]);
   setMessage("");
