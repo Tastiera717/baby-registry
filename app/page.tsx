@@ -46,26 +46,23 @@ fetchPhotos();
 
 // 💌 FETCH MESSAGGI
 useEffect(() => {
-const fetchMessages = async () => {
-const { data, error } = await supabase
-.from("baby-registry")
-.select("*")
-.order("created_at", { ascending: false });
+  const fetchPhotos = async () => {
+    const { data, error } = await supabase
+      .from("Photos")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-```
-  if (error) {
-    console.error("FETCH MESSAGES ERROR:", error);
-    return;
-  }
+    if (error) {
+      console.error("FETCH PHOTOS ERROR:", error);
+      return;
+    }
 
-  if (data) {
-    setMessages(data.map((m) => m.text));
-  }
-};
+    if (data) {
+      setPhotos(data.map((p) => p.url));
+    }
+  };
 
-fetchMessages();
-```
-
+  fetchPhotos();
 }, []);
 
 // 💌 ADD MESSAGE
