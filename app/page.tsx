@@ -41,18 +41,23 @@ useEffect(() => {
   fetchData();
 }, []);
 const addMessage = useCallback(async () => { 
-if (!message.trim()) return; 
-const newMessage = message.trim(); 
-const { error } = await supabase.from("baby-registry").insert([{ text: newMessage }]); 
-{ text: newMessage }, 
-]); 
-if (error) { 
-console.error("SUPABASE ERROR:", error); 
-alert(error.message); 
-return; 
-} 
-setMessages((prev) => [newMessage, ...prev]); 
-setMessage(""); 
+  if (!message.trim()) return; 
+
+  const newMessage = message.trim(); 
+
+  // Questa riga ora è pulita e corretta
+  const { error } = await supabase
+    .from("baby-registry")
+    .insert([{ text: newMessage }]); 
+
+  if (error) { 
+    console.error("SUPABASE ERROR:", error); 
+    alert(error.message); 
+    return; 
+  } 
+
+  setMessages((prev) => [newMessage, ...prev]); 
+  setMessage(""); 
 }, [message]); 
 const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { 
 const files = Array.from(e.target.files || []); 
