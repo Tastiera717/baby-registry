@@ -67,30 +67,33 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   for (const file of files) {
     const fileName = `${Date.now()}-${file.name}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("Photos") // 👈 MAIUSCOLA
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("Photos")
       .upload(fileName, file);
 
     if (uploadError) {
-      console.error(uploadError);
-      alert("Errore upload");
+      console.error("UPLOAD ERROR:", uploadError);
+      alert(uploadError.message);
       continue;
     }
 
-    const { data } = supabase.storage
+    const { data: urlData } = supabase.storage
       .from("Photos")
       .getPublicUrl(fileName);
 
-    const publicUrl = data?.publicUrl;
+    if (!urlData?.publicUrl) {
+      console.error("PUBLIC URL ERROR");
+      continue;
+    }
 
-    if (!publicUrl) continue;
+    const publicUrl = urlData.publicUrl;
 
     const { error: dbError } = await supabase.from("photos").insert([
       { url: publicUrl },
     ]);
 
     if (dbError) {
-      console.error(dbError);
+      console.error("DB ERROR:", dbError);
       continue;
     }
 
