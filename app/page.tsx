@@ -46,23 +46,26 @@ fetchPhotos();
 
 // 💌 FETCH MESSAGGI
 useEffect(() => {
-  const fetchPhotos = async () => {
-    const { data, error } = await supabase
-      .from("Photos")
-      .select("*")
-      .order("created_at", { ascending: false });
+const fetchMessages = async () => {
+const { data, error } = await supabase
+.from("baby-registry")
+.select("*")
+.order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("FETCH PHOTOS ERROR:", error);
-      return;
-    }
+```
+  if (error) {
+    console.error("FETCH MESSAGES ERROR:", error);
+    return;
+  }
 
-    if (data) {
-      setPhotos(data.map((p) => p.url));
-    }
-  };
+  if (data) {
+    setMessages(data.map((m) => m.text));
+  }
+};
 
-  fetchPhotos();
+fetchMessages();
+```
+
 }, []);
 
 // 💌 ADD MESSAGE
@@ -88,7 +91,7 @@ setMessage("");
 
 }, [message]);
 
-// 📤 UPLOAD FOTO (FIX DEFINITIVO)
+// 📤 UPLOAD FOTO
 const handlePhotoUpload = async (
 e: React.ChangeEvent<HTMLInputElement>
 ) => {
@@ -102,12 +105,10 @@ for (const file of files) {
     .toString(36)
     .slice(2)}.${fileExt}`;
 
-  // 🔥 TEST: niente cartella (evita errori path)
   const filePath = fileName;
 
   console.log("UPLOAD PATH:", filePath);
 
-  // 📤 UPLOAD STORAGE
   const { error: uploadError } = await supabase.storage
     .from("Photos")
     .upload(filePath, file, {
@@ -121,7 +122,6 @@ for (const file of files) {
     return;
   }
 
-  // 🔗 PUBLIC URL
   const { data: urlData } = supabase.storage
     .from("Photos")
     .getPublicUrl(filePath);
@@ -133,7 +133,6 @@ for (const file of files) {
     return;
   }
 
-  // 💾 SAVE DB
   const { error: dbError } = await supabase.from("Photos").insert([
     { url: publicUrl },
   ]);
@@ -143,7 +142,6 @@ for (const file of files) {
     return;
   }
 
-  // ⚡ UI UPDATE
   setPhotos((prev) => [publicUrl, ...prev]);
 }
 ```
