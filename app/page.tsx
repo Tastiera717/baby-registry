@@ -69,7 +69,7 @@ export default function BabyRegistry() {
 
   return ( 
     <div className="min-h-screen flex flex-col items-center p-4 relative overflow-hidden font-dreaming text-blue-800"> 
-      {/* FONT CUSTOM RIPRISTINATO */}
+      {/* FONT CUSTOM */}
       <style>{` 
         @font-face { 
           font-family: 'Dreaming'; 
