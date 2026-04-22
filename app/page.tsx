@@ -54,7 +54,7 @@ export default function BabyRegistry() {
       const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_"); 
       const filePath = `${crypto.randomUUID()}-${safeName}`; 
       const { error: uploadError } = await supabase.storage.from("Photos").upload(filePath, file); 
-      if (uploadError) return; 
+      if (uploadError) continue; 
       
       const { data: urlData } = supabase.storage.from("Photos").getPublicUrl(filePath); 
       const publicUrl = urlData?.publicUrl; 
@@ -64,8 +64,6 @@ export default function BabyRegistry() {
       } 
     } 
   }; 
-
-  const babyMessage = "Body e peluche sono adorabili… ma pannolini e notti insonni lo sono un po’ meno 😄 Se vuoi darci una mano, useremo il tutto per affrontare al meglio questa nuova avventura!🦊"; 
 
   return ( 
     <div className="min-h-screen flex flex-col items-center p-4 relative overflow-hidden font-dreaming text-blue-800"> 
@@ -78,7 +76,7 @@ export default function BabyRegistry() {
       <div className="absolute inset-0 bg-white/70" /> 
 
       <div className="absolute top-4 right-4 z-50"> 
-        <Button onClick={() => setMusicOn((v) => !v)} className="bg-white/50 rounded-full p-2 text-2xl"> 
+        <Button onClick={() => setMusicOn((v) => !v)} className="bg-white/50 rounded-full p-2 text-2xl shadow-sm"> 
           {musicOn ? "🔊" : "🔇"} 
         </Button> 
       </div> 
@@ -88,82 +86,17 @@ export default function BabyRegistry() {
       )} 
 
       <div className="relative z-10 text-center mt-10 mb-6 px-2"> 
-        <h1 className="text-3xl font-bold">Benvenuto</h1> 
-        <h2 className="text-5xl font-extrabold mt-1">Michele</h2> 
-        <p className="mt-4 text-base leading-relaxed">{babyMessage}</p> 
-        <p className="mt-3 text-lg font-semibold">9 ottobre 2026</p> 
+        <h1 className="text-3xl font-bold uppercase tracking-widest">Benvenuto</h1> 
+        <h2 className="text-6xl font-extrabold mt-1 text-blue-600">Michele</h2> 
+        <p className="mt-4 text-base leading-relaxed max-w-xs mx-auto">
+          Se vuoi darci una mano, useremo il tutto per affrontare al meglio questa nuova avventura!🦊
+        </p> 
+        <p className="mt-3 text-lg font-semibold italic">9 ottobre 2026</p> 
       </div> 
 
-      <div className="w-full max-w-md space-y-5 z-10"> 
+      <div className="w-full max-w-md space-y-5 z-10 relative"> 
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare</h2> 
-          <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi un messaggio" className="mt-2" /> 
+          <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi un messaggio" className="mt-2 bg-white" /> 
           <Button onClick={addMessage} className={`mt-3 ${BTN}`}>Invia 💙</Button> 
-          <Button onClick={() => setPaymentOpen(true)} className={`mt-2 ${BTN}`}>Dettagli contributo 🧸</Button> 
-        </div> 
-
-        <div className={CARD}> 
-          <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
-          <input id="galleryInput" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" /> 
-          <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo</Button> 
-          
-          <div className="grid grid-cols-3 gap-2 mt-4"> 
-            {photos.map((p, i) => ( 
-              <div 
-                key={i} 
-                onClick={() => setSelectedPhoto(p)}
-                className="w-full h-24 rounded-xl cursor-pointer shadow-sm active:scale-95 transition-transform"
-                style={{ 
-                  backgroundImage: `url(${p})`, 
-                  backgroundSize: 'cover', 
-                  backgroundPosition: 'center',
-                  WebkitTapHighlightColor: 'transparent'
-                }} 
-              /> 
-            ))} 
-          </div> 
-        </div> 
-
-        <div className={CARD}> 
-          <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
-          <div className="space-y-2"> 
-            {messages.map((m, i) => ( 
-              <div key={i} className="bg-white rounded-xl p-3 text-sm">{m}</div> 
-            ))} 
-          </div> 
-        </div> 
-      </div> 
-
-      {paymentOpen && ( 
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setPaymentOpen(false)}> 
-          <div className="bg-white rounded-3xl p-6 w-[90%] max-w-md" onClick={(e) => e.stopPropagation()}> 
-            <h3 className="text-lg font-semibold mb-4">🧸 Contributo</h3> 
-            <div className="space-y-3 text-sm"> 
-              <div className="p-3 bg-sky-50 rounded-xl"><p className="font-semibold">IBAN</p><p>{IBAN}</p></div> 
-              <div className="p-3 bg-sky-50 rounded-xl"><p className="font-semibold">PayPal</p><p>{PAYPAL_EMAIL}</p></div> 
-            </div> 
-            <Button onClick={() => setPaymentOpen(false)} className="mt-5 w-full">Chiudi</Button> 
-          </div> 
-        </div> 
-      )} 
-
-      {selectedPhoto && (
-        <div 
-          className="fixed inset-0 bg-black/95 flex items-center justify-center p-4" 
-          style={{ zIndex: 9999, touchAction: 'none' }}
-          onClick={() => setSelectedPhoto(null)}
-        >
-          <div className="relative w-full h-full flex items-center justify-center">
-            <img 
-              src={selectedPhoto} 
-              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" 
-              alt="Full screen"
-              onClick={(e) => { e.stopPropagation(); setSelectedPhoto(null); }}
-            />
-            <div className="absolute top-0 right-0 p-4 text-white text-5xl font-light">×</div>
-          </div>
-        </div>
-      )}
-    </div> 
-  ); 
-}
+          <Button onClick={() => setPaymentOpen(true)} className={`mt-2 ${BTN
