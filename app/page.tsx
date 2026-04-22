@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
@@ -12,8 +12,7 @@ const YT_VIDEO_ID = "lp-EO5I60KA";
 const PRIMARY = "text-blue-800";
 const BTN =
   "bg-blue-500 hover:bg-blue-600 text-white rounded-full py-4 text-lg shadow-md w-full";
-const CARD =
-  "bg-sky-50 rounded-3xl shadow-lg p-5"; // 👈 celeste chiaro
+const CARD = "bg-sky-50 rounded-3xl shadow-lg p-5";
 
 export default function BabyRegistry() {
   const [message, setMessage] = useState("");
@@ -22,6 +21,7 @@ export default function BabyRegistry() {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
 
+  // ✅ FETCH MESSAGGI
   useEffect(() => {
     const fetchMessages = async () => {
       const { data } = await supabase
@@ -33,36 +33,71 @@ export default function BabyRegistry() {
         setMessages(data.map((m) => m.text));
       }
     };
+
     fetchMessages();
   }, []);
 
+  // ✅ FETCH FOTO
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      const { data } = await supabase
+        .from("photos")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (data) {
+        setPhotos(data.map((p) => p.url));
+      }
+    };
+
+    fetchPhotos();
+  }, []);
+
+  // ✅ FIX MESSAGGI
   const addMessage = useCallback(async () => {
     if (!message.trim()) return;
 
-    await supabase.from("messages").insert([
+    const newMessage = message.trim();
+
+    const { error } = await supabase.from("messages").insert([
       {
-        text: message.trim(),
+        text: newMessage,
       },
     ]);
 
-    setMessage("");
-    setPaymentOpen(true);
+    if (!error) {
+      setMessages((prev) => [newMessage, ...prev]);
+      setMessage("");
+    }
   }, [message]);
 
+  // ✅ FIX FOTO
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
 
     for (const file of files) {
       const fileName = `${Date.now()}-${file.name}`;
 
-      await supabase.storage.from("photos").upload(fileName, file);
+      const { error: uploadError } = await supabase.storage
+        .from("photos")
+        .upload(fileName, file);
+
+      if (uploadError) continue;
 
       const { data } = supabase.storage
         .from("photos")
         .getPublicUrl(fileName);
 
-      if (data?.publicUrl) {
-        setPhotos((prev) => [data.publicUrl, ...prev]);
+      const publicUrl = data?.publicUrl;
+
+      if (publicUrl) {
+        await supabase.from("photos").insert([
+          {
+            url: publicUrl,
+          },
+        ]);
+
+        setPhotos((prev) => [publicUrl, ...prev]);
       }
     }
   };
@@ -73,26 +108,15 @@ export default function BabyRegistry() {
 
   return (
     <div className="min-h-screen flex flex-col items-center p-4 relative overflow-hidden font-dreaming text-blue-800">
-      
-      {/* FONT CUSTOM */}
+
+      {/* FONT */}
       <style>{`
         @font-face {
           font-family: 'Dreaming';
           src: url('/fonts/dreaming-outloud-pro.woff') format('woff');
-          font-weight: normal;
-          font-style: normal;
         }
         .font-dreaming {
           font-family: 'Dreaming', cursive;
-        }
-
-        .float-slow {
-          animation: float 6s ease-in-out infinite;
-        }
-        @keyframes float {
-          0% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-          100% { transform: translateY(0px); }
         }
       `}</style>
 
@@ -123,14 +147,8 @@ export default function BabyRegistry() {
       <div className="relative z-10 text-center mt-10 mb-6 px-2">
         <h1 className="text-3xl font-bold">Benvenuto</h1>
         <h2 className="text-5xl font-extrabold mt-1">Michele</h2>
-
-        <p className="mt-4 text-base leading-relaxed">
-          {babyMessage}
-        </p>
-
-        <p className="mt-3 text-lg font-semibold">
-          9 ottobre 2026
-        </p>
+        <p className="mt-4 text-base leading-relaxed">{babyMessage}</p>
+        <p className="mt-3 text-lg font-semibold">9 ottobre 2026</p>
       </div>
 
       {/* CONTENT */}
@@ -183,7 +201,7 @@ export default function BabyRegistry() {
               document.getElementById("galleryInput")?.click()
             }
           >
-            Condividi un ricordo per Miki
+            Condividi un ricordo
           </Button>
 
           <div className="grid grid-cols-3 gap-2 mt-4">
@@ -204,6 +222,12 @@ export default function BabyRegistry() {
           </h2>
 
           <div className="space-y-2">
+            {messages.length === 0 && (
+              <p className="text-sm text-gray-500">
+                Nessun messaggio ancora 💙
+              </p>
+            )}
+
             {messages.map((m, i) => (
               <div
                 key={i}
