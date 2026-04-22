@@ -22,50 +22,81 @@ export default function BabyRegistry() {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      const { data } = await supabase
-        .from("messages")
-        .select("*")
-        .order("created_at", { ascending: false });
+useEffect(() => {
+  const fetchPhotos = async () => {
+    const { data, error } = await supabase
+      .from("photos")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-      if (data) {
-        setMessages(data.map((m) => m.text));
-      }
-    };
-    fetchMessages();
-  }, []);
+    if (error) {
+      console.error(error);
+      return;
+    }
 
-  const addMessage = useCallback(async () => {
-    if (!message.trim()) return;
-
-    await supabase.from("messages").insert([
-      {
-        text: message.trim(),
-      },
-    ]);
-
-    setMessage("");
-    setPaymentOpen(true);
-  }, [message]);
-
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-
-    for (const file of files) {
-      const fileName = `${Date.now()}-${file.name}`;
-
-      await supabase.storage.from("photos").upload(fileName, file);
-
-      const { data } = supabase.storage
-        .from("photos")
-        .getPublicUrl(fileName);
-
-      if (data?.publicUrl) {
-        setPhotos((prev) => [data.publicUrl, ...prev]);
-      }
+    if (data) {
+      setPhotos(data.map((p) => p.url));
     }
   };
+
+  fetchPhotos();
+}, []);
+
+const addMessage = useCallback(async () => {
+  if (!message.trim()) return;
+
+  const newMessage = message.trim();
+
+  const { error } = await supabase.from("messages").insert([
+    { text: newMessage },
+  ]);
+
+  if (error) {
+    console.error(error);
+    alert("Errore invio messaggio");
+    return;
+  }
+
+  setMessages((prev) => [newMessage, ...prev]);
+  setMessage("");
+}, [message]);
+
+const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = Array.from(e.target.files || []);
+
+  for (const file of files) {
+    const fileName = `${Date.now()}-${file.name}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("Photos") // 👈 MAIUSCOLA
+      .upload(fileName, file);
+
+    if (uploadError) {
+      console.error(uploadError);
+      alert("Errore upload");
+      continue;
+    }
+
+    const { data } = supabase.storage
+      .from("Photos")
+      .getPublicUrl(fileName);
+
+    const publicUrl = data?.publicUrl;
+
+    if (!publicUrl) continue;
+
+    const { error: dbError } = await supabase.from("photos").insert([
+      { url: publicUrl },
+    ]);
+
+    if (dbError) {
+      console.error(dbError);
+      continue;
+    }
+
+    setPhotos((prev) => [publicUrl, ...prev]);
+  }
+};
 
   const babyMessage =
     "Body e peluche sono adorabili… ma pannolini e notti insonni lo sono un po’ meno 😄 " +
