@@ -67,21 +67,24 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   for (const file of files) {
     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
 
-    // ✅ FIX IMPORTANTE: path valido con folder
-    const filePath = `uploads/${Date.now()}-${safeName}`;
+    // ✅ path ULTRA SAFE (NO ERRORI SUPABASE)
+    const filePath = `uploads/${crypto.randomUUID()}-${safeName}`;
 
-    // 📤 UPLOAD SU STORAGE
+    // 📤 UPLOAD STORAGE
     const { error: uploadError } = await supabase.storage
       .from("Photos")
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
 
     if (uploadError) {
       console.error("UPLOAD ERROR:", uploadError);
       alert(uploadError.message);
-      continue;
+      return;
     }
 
-    // 🔗 URL PUBBLICO
+    // 🔗 PUBLIC URL
     const { data: urlData } = supabase.storage
       .from("Photos")
       .getPublicUrl(filePath);
@@ -90,22 +93,20 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
     if (!publicUrl) {
       console.error("PUBLIC URL ERROR");
-      continue;
+      return;
     }
 
-    // 💾 SALVATAGGIO SU DB (TABELLA Photos)
+    // 💾 SAVE DB (TABELLA Photos)
     const { error: dbError } = await supabase.from("Photos").insert([
-      {
-        url: publicUrl,
-      },
+      { url: publicUrl },
     ]);
 
     if (dbError) {
       console.error("DB ERROR:", dbError);
-      continue;
+      return;
     }
 
-    // ⚡ UPDATE UI
+    // ⚡ UI UPDATE
     setPhotos((prev) => [publicUrl, ...prev]);
   }
 };
