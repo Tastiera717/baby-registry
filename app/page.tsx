@@ -25,7 +25,7 @@ export default function BabyRegistry() {
 useEffect(() => {
   const fetchPhotos = async () => {
     const { data, error } = await supabase
-      .from("photos")
+      .from("Photos")
       .select("*")
       .order("created_at", { ascending: false });
 
@@ -66,11 +66,14 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
   for (const file of files) {
     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-const fileName = `${Date.now()}-${safeName}`;
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    // ✅ FIX IMPORTANTE: path valido con folder
+    const filePath = `uploads/${Date.now()}-${safeName}`;
+
+    // 📤 UPLOAD SU STORAGE
+    const { error: uploadError } = await supabase.storage
       .from("Photos")
-      .upload(fileName, file);
+      .upload(filePath, file);
 
     if (uploadError) {
       console.error("UPLOAD ERROR:", uploadError);
@@ -78,19 +81,23 @@ const fileName = `${Date.now()}-${safeName}`;
       continue;
     }
 
+    // 🔗 URL PUBBLICO
     const { data: urlData } = supabase.storage
       .from("Photos")
-      .getPublicUrl(fileName);
+      .getPublicUrl(filePath);
 
-    if (!urlData?.publicUrl) {
+    const publicUrl = urlData?.publicUrl;
+
+    if (!publicUrl) {
       console.error("PUBLIC URL ERROR");
       continue;
     }
 
-    const publicUrl = urlData.publicUrl;
-
-    const { error: dbError } = await supabase.from("photos").insert([
-      { url: publicUrl },
+    // 💾 SALVATAGGIO SU DB (TABELLA Photos)
+    const { error: dbError } = await supabase.from("Photos").insert([
+      {
+        url: publicUrl,
+      },
     ]);
 
     if (dbError) {
@@ -98,6 +105,7 @@ const fileName = `${Date.now()}-${safeName}`;
       continue;
     }
 
+    // ⚡ UPDATE UI
     setPhotos((prev) => [publicUrl, ...prev]);
   }
 };
