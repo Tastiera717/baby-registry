@@ -18,14 +18,14 @@ const CARD =
 export default function BabyRegistry() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
-  const [Photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
 
 useEffect(() => {
   const fetchPhotos = async () => {
     const { data, error } = await supabase
-      .from("Photos")
+      .from("photos")
       .select("*")
       .order("created_at", { ascending: false });
 
@@ -89,7 +89,7 @@ const fileName = `${Date.now()}-${safeName}`;
 
     const publicUrl = urlData.publicUrl;
 
-    const { error: dbError } = await supabase.from("Photos").insert([
+    const { error: dbError } = await supabase.from("photos").insert([
       { url: publicUrl },
     ]);
 
@@ -222,7 +222,7 @@ const fileName = `${Date.now()}-${safeName}`;
           </Button>
 
           <div className="grid grid-cols-3 gap-2 mt-4">
-            {Photos.map((p, i) => (
+            {photos.map((p, i) => (
               <img
                 key={i}
                 src={p}
