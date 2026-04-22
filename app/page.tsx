@@ -18,14 +18,14 @@ const CARD =
 export default function BabyRegistry() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [Photos, setPhotos] = useState<string[]>([]);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [musicOn, setMusicOn] = useState(false);
 
 useEffect(() => {
   const fetchPhotos = async () => {
     const { data, error } = await supabase
-      .from("photos")
+      .from("Photos")
       .select("*")
       .order("created_at", { ascending: false });
 
@@ -65,7 +65,8 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const files = Array.from(e.target.files || []);
 
   for (const file of files) {
-    const fileName = `${Date.now()}-${file.name}`;
+    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+const fileName = `${Date.now()}-${safeName}`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("Photos")
@@ -88,7 +89,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
     const publicUrl = urlData.publicUrl;
 
-    const { error: dbError } = await supabase.from("photos").insert([
+    const { error: dbError } = await supabase.from("Photos").insert([
       { url: publicUrl },
     ]);
 
@@ -221,7 +222,7 @@ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           </Button>
 
           <div className="grid grid-cols-3 gap-2 mt-4">
-            {photos.map((p, i) => (
+            {Photos.map((p, i) => (
               <img
                 key={i}
                 src={p}
