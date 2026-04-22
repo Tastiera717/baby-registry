@@ -107,8 +107,6 @@ for (const file of files) {
 
   const filePath = fileName;
 
-  console.log("UPLOAD PATH:", filePath);
-
   const { error: uploadError } = await supabase.storage
     .from("Photos")
     .upload(filePath, file, {
@@ -128,19 +126,13 @@ for (const file of files) {
 
   const publicUrl = urlData?.publicUrl;
 
-  if (!publicUrl) {
-    console.error("PUBLIC URL ERROR");
-    return;
-  }
+  if (!publicUrl) return;
 
   const { error: dbError } = await supabase.from("Photos").insert([
     { url: publicUrl },
   ]);
 
-  if (dbError) {
-    console.error("DB ERROR:", dbError);
-    return;
-  }
+  if (dbError) return;
 
   setPhotos((prev) => [publicUrl, ...prev]);
 }
@@ -162,14 +154,12 @@ return ( <div className="min-h-screen flex flex-col items-center p-4 relative ov
       `}</style>
 
 ```
-  {/* BACKGROUND */}
   <div
     className="absolute inset-0 bg-no-repeat bg-top bg-cover"
     style={{ backgroundImage: "url('/bg-mobile.png')" }}
   />
   <div className="absolute inset-0 bg-white/70" />
 
-  {/* MUSIC */}
   <div className="absolute top-4 right-4 z-50">
     <Button onClick={() => setMusicOn((v) => !v)} className={BTN}>
       {musicOn ? "🔊" : "🔇"}
@@ -185,7 +175,6 @@ return ( <div className="min-h-screen flex flex-col items-center p-4 relative ov
     />
   )}
 
-  {/* HEADER */}
   <div className="relative z-10 text-center mt-10 mb-6 px-2">
     <h1 className="text-3xl font-bold">Benvenuto</h1>
     <h2 className="text-5xl font-extrabold mt-1">Michele</h2>
@@ -193,40 +182,19 @@ return ( <div className="min-h-screen flex flex-col items-center p-4 relative ov
     <p className="mt-3 text-lg font-semibold">9 ottobre 2026</p>
   </div>
 
-  {/* CONTENT */}
   <div className="w-full max-w-md space-y-5 z-10">
-    {/* MESSAGGIO */}
     <div className={CARD}>
-      <h2 className={`text-lg font-semibold ${PRIMARY}`}>
-        💝 Per iniziare questa avventura
-      </h2>
-
       <Input
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         placeholder="Scrivi un messaggio"
-        className="mt-2"
       />
-
       <Button onClick={addMessage} className={`mt-3 ${BTN}`}>
         Invia 💙
       </Button>
-
-      <Button
-        type="button"
-        onClick={() => setPaymentOpen(true)}
-        className={`mt-2 ${BTN}`}
-      >
-        Dettagli contributo 🧸
-      </Button>
     </div>
 
-    {/* FOTO */}
     <div className={CARD}>
-      <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>
-        📸 Ricordi
-      </h2>
-
       <input
         id="galleryInput"
         type="file"
@@ -235,78 +203,28 @@ return ( <div className="min-h-screen flex flex-col items-center p-4 relative ov
         onChange={handlePhotoUpload}
         className="hidden"
       />
-
       <Button
         className={BTN}
         onClick={() =>
           document.getElementById("galleryInput")?.click()
         }
       >
-        Condividi un ricordo per Miki
+        Upload foto
       </Button>
 
       <div className="grid grid-cols-3 gap-2 mt-4">
         {photos.map((p, i) => (
-          <img
-            key={i}
-            src={p}
-            className="w-full h-24 object-cover rounded-xl"
-          />
+          <img key={i} src={p} className="h-24 w-full object-cover" />
         ))}
       </div>
     </div>
 
-    {/* MESSAGGI */}
     <div className={CARD}>
-      <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>
-        💌 Messaggi
-      </h2>
-
-      <div className="space-y-2">
-        {messages.map((m, i) => (
-          <div key={i} className="bg-white rounded-xl p-3 text-sm">
-            {m}
-          </div>
-        ))}
-      </div>
+      {messages.map((m, i) => (
+        <div key={i}>{m}</div>
+      ))}
     </div>
   </div>
-
-  {/* MODAL */}
-  {paymentOpen && (
-    <div
-      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-      onClick={() => setPaymentOpen(false)}
-    >
-      <div
-        className="bg-white rounded-3xl p-6 w-[90%] max-w-md"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 className="text-lg font-semibold mb-4">
-          🧸 Contributo
-        </h3>
-
-        <div className="space-y-3 text-sm">
-          <div className="p-3 bg-sky-50 rounded-xl">
-            <p className="font-semibold">IBAN</p>
-            <p>{IBAN}</p>
-          </div>
-
-          <div className="p-3 bg-sky-50 rounded-xl">
-            <p className="font-semibold">PayPal</p>
-            <p>{PAYPAL_EMAIL}</p>
-          </div>
-        </div>
-
-        <Button
-          onClick={() => setPaymentOpen(false)}
-          className="mt-5 w-full"
-        >
-          Chiudi
-        </Button>
-      </div>
-    </div>
-  )}
 </div>
 ```
 
