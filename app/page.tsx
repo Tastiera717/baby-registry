@@ -183,7 +183,7 @@ export default function BabyRegistry() {
               document.getElementById("galleryInput")?.click()
             }
           >
-            Condividi un ricordo
+            Condividi un ricordo per Miki
           </Button>
 
           <div className="grid grid-cols-3 gap-2 mt-4">
