@@ -199,20 +199,27 @@ document.getElementById("galleryInput")?.click()
 Condividi un ricordo per Miki 
 </Button> 
 <div className="grid grid-cols-3 gap-2 mt-4"> 
-{photos.map((p, i) => ( 
-  <div 
-    key={i}
-    className="relative w-full h-24"
-    onClick={() => setSelectedPhoto(p)} // Spostiamo il click sul contenitore per sicurezza
-  >
-    <img 
-      src={p} 
-      className="w-full h-full object-cover rounded-xl cursor-pointer touch-manipulation" 
-      style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }} // Disabilita "anteprima immagine" su iOS/Android
-      alt="Ricordo"
+<div className="grid grid-cols-3 gap-2 mt-4"> 
+  {photos.map((p, i) => ( 
+    <div 
+      key={i} 
+      // Usiamo onPointerDown per anticipare qualsiasi movimento del sistema
+      onPointerDown={(e) => {
+        e.preventDefault();
+        setSelectedPhoto(p);
+      }}
+      className="w-full h-24 rounded-xl cursor-pointer shadow-sm active:scale-95 transition-transform"
+      style={{ 
+        backgroundImage: `url(${p})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        touchAction: 'manipulation',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none'
+      }} 
     /> 
-  </div>
-))}
+  ))} 
+</div>
 </div> 
 </div> 
 {/* MESSAGGI */} 
@@ -268,21 +275,17 @@ Chiudi
 {selectedPhoto && (
   <div 
     className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center"
-    style={{ touchAction: 'none' }} // Blocca lo scroll della pagina sotto
-    onClick={() => setSelectedPhoto(null)} // Chiude al click/tocco
+    style={{ touchAction: 'none' }}
+    onClick={() => setSelectedPhoto(null)} 
   >
-    <div className="w-full h-full flex items-center justify-center p-4">
+    <div className="relative w-full h-full flex items-center justify-center p-4">
       <img 
         src={selectedPhoto} 
-        className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-        style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+        className="max-w-full max-h-full object-contain rounded-lg shadow-2xl pointer-events-none" // pointer-events-none fa "passare" il click allo sfondo nero sotto
         alt="Foto ingrandita"
-        onClick={(e) => e.stopPropagation()} // Se clicchi proprio sulla foto, non chiudere (opzionale, se vuoi che si chiuda cliccando ovunque rimuovi questa riga)
       />
-      
-      {/* Pulsante X molto grande e visibile */}
       <button 
-        className="absolute top-8 right-8 text-white bg-white/10 rounded-full w-14 h-14 flex items-center justify-center text-4xl border border-white/20"
+        className="absolute top-10 right-6 text-white bg-white/20 rounded-full w-14 h-14 flex items-center justify-center text-4xl"
         onClick={(e) => {
           e.stopPropagation();
           setSelectedPhoto(null);
