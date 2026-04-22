@@ -88,7 +88,7 @@ export default function BabyRegistry() {
       <div className="relative z-10 text-center mt-10 mb-6 px-2"> 
         <h1 className="text-3xl font-bold uppercase tracking-widest">Benvenuto</h1> 
         <h2 className="text-6xl font-extrabold mt-1 text-blue-600">Michele</h2> 
-        <p className="mt-4 text-base leading-relaxed max-w-xs mx-auto">
+        <p className="mt-4 text-base leading-relaxed max-w-xs mx-auto text-blue-900">
           Se vuoi darci una mano, useremo il tutto per affrontare al meglio questa nuova avventura!🦊
         </p> 
         <p className="mt-3 text-lg font-semibold italic">9 ottobre 2026</p> 
@@ -99,4 +99,84 @@ export default function BabyRegistry() {
           <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare</h2> 
           <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi un messaggio" className="mt-2 bg-white" /> 
           <Button onClick={addMessage} className={`mt-3 ${BTN}`}>Invia 💙</Button> 
-          <Button onClick={() => setPaymentOpen(true)} className={`mt-2 ${BTN
+          <Button onClick={() => setPaymentOpen(true)} className={`mt-2 ${BTN}`}>Dettagli contributo 🧸</Button> 
+        </div> 
+
+        <div className={CARD}> 
+          <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
+          <input id="galleryInput" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" /> 
+          <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi una foto</Button> 
+          
+          <div className="grid grid-cols-3 gap-2 mt-4"> 
+            {photos.map((p, i) => ( 
+              <button
+                key={i} 
+                type="button"
+                onClick={() => setSelectedPhoto(p)}
+                className="w-full h-24 rounded-xl shadow-sm active:scale-95 transition-transform overflow-hidden border-none p-0 m-0 outline-none"
+                style={{ 
+                  backgroundImage: `url(${p})`, 
+                  backgroundSize: 'cover', 
+                  backgroundPosition: 'center',
+                  WebkitTapHighlightColor: 'transparent',
+                  display: 'block'
+                }}
+              />
+            ))} 
+          </div> 
+        </div> 
+
+        <div className={CARD}> 
+          <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-1"> 
+            {messages.map((m, i) => ( 
+              <div key={i} className="bg-white rounded-xl p-3 text-sm shadow-sm border border-blue-100">{m}</div> 
+            ))} 
+          </div> 
+        </div> 
+      </div> 
+
+      {paymentOpen && ( 
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] px-4" onClick={() => setPaymentOpen(false)}> 
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}> 
+            <h3 className="text-xl font-bold mb-4 text-center text-blue-800">🧸 Contributo</h3> 
+            <div className="space-y-4"> 
+              <div className="p-4 bg-sky-50 rounded-2xl border border-sky-100">
+                <p className="text-xs uppercase text-sky-600 font-bold mb-1">IBAN</p>
+                <p className="text-sm font-mono break-all select-all">{IBAN}</p>
+              </div> 
+              <div className="p-4 bg-sky-50 rounded-2xl border border-sky-100">
+                <p className="text-xs uppercase text-sky-600 font-bold mb-1">PayPal</p>
+                <p className="text-sm font-mono select-all">{PAYPAL_EMAIL}</p>
+              </div> 
+            </div> 
+            <Button onClick={() => setPaymentOpen(false)} className="mt-6 w-full bg-blue-500 text-white rounded-full py-3">Chiudi</Button> 
+          </div> 
+        </div> 
+      )} 
+
+      {selectedPhoto && (
+        <div 
+          className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999]" 
+          style={{ touchAction: 'none' }}
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div className="relative w-full h-full flex items-center justify-center">
+            <img 
+              src={selectedPhoto} 
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" 
+              alt="Anteprima"
+              onClick={(e) => e.stopPropagation()} 
+            />
+            <button 
+              className="absolute top-0 right-0 p-4 text-white text-6xl leading-none font-light outline-none"
+              onClick={() => setSelectedPhoto(null)}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+    </div> 
+  ); 
+}
