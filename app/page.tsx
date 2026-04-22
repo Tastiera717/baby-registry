@@ -198,30 +198,43 @@ document.getElementById("galleryInput")?.click()
 > 
 Condividi un ricordo per Miki 
 </Button> 
-<div className="grid grid-cols-3 gap-2 mt-4"> 
-<div className="grid grid-cols-3 gap-2 mt-4"> 
-  {photos.map((p, i) => ( 
-    <div 
-      key={i} 
-      // Usiamo onPointerDown per anticipare qualsiasi movimento del sistema
-      onPointerDown={(e) => {
-        e.preventDefault();
-        setSelectedPhoto(p);
-      }}
-      className="w-full h-24 rounded-xl cursor-pointer shadow-sm active:scale-95 transition-transform"
-      style={{ 
-        backgroundImage: `url(${p})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        touchAction: 'manipulation',
-        WebkitUserSelect: 'none',
-        WebkitTouchCallout: 'none'
-      }} 
-    /> 
-  ))} 
+{/* FOTO */}
+<div className={CARD}>
+  <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2>
+  <input
+    id="galleryInput"
+    type="file"
+    accept="image/*"
+    multiple
+    onChange={handlePhotoUpload}
+    className="hidden"
+  />
+  <Button
+    className={BTN}
+    onClick={() => document.getElementById("galleryInput")?.click()}
+  >
+    Condividi un ricordo per Miki
+  </Button>
+
+  {/* GRIGLIA CORRETTA - Un solo contenitore */}
+  <div className="grid grid-cols-3 gap-2 mt-4">
+    {photos.map((p, i) => (
+      <div
+        key={i}
+        // Usiamo onClick semplice ma con proprietà CSS che forzano il tocco
+        onClick={() => setSelectedPhoto(p)}
+        className="w-full h-24 rounded-xl cursor-pointer shadow-sm active:scale-95 transition-transform"
+        style={{
+          backgroundImage: `url(${p})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          WebkitTapHighlightColor: 'transparent', // Rimuove il fastidioso quadrato blu al tocco
+          touchAction: 'manipulation'
+        }}
+      />
+    ))}
+  </div>
 </div>
-</div> 
-</div> 
 {/* MESSAGGI */} 
 <div className={CARD}> 
 <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}> 
@@ -273,26 +286,32 @@ Chiudi
 )} 
 {/* LIGHTBOX PER FOTO A TUTTO SCHERMO */}
 {selectedPhoto && (
-  <div 
-    className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center"
-    style={{ touchAction: 'none' }}
-    onClick={() => setSelectedPhoto(null)} 
+  <div
+    className="fixed inset-0 bg-black/95 flex items-center justify-center p-4"
+    style={{ 
+      zIndex: 9999, // Forza sopra ogni cosa
+      touchAction: 'none' 
+    }}
+    onClick={() => setSelectedPhoto(null)}
   >
-    <div className="relative w-full h-full flex items-center justify-center p-4">
-      <img 
-        src={selectedPhoto} 
-        className="max-w-full max-h-full object-contain rounded-lg shadow-2xl pointer-events-none" // pointer-events-none fa "passare" il click allo sfondo nero sotto
+    <div className="relative w-full h-full flex items-center justify-center">
+      <img
+        src={selectedPhoto}
+        className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
         alt="Foto ingrandita"
-      />
-      <button 
-        className="absolute top-10 right-6 text-white bg-white/20 rounded-full w-14 h-14 flex items-center justify-center text-4xl"
+        // Evita che il click sulla foto venga ignorato
         onClick={(e) => {
           e.stopPropagation();
           setSelectedPhoto(null);
         }}
+      />
+      {/* Tasto X più grande e isolato */}
+      <div 
+        className="absolute top-0 right-0 p-4 text-white text-5xl font-light cursor-pointer"
+        onClick={() => setSelectedPhoto(null)}
       >
         ×
-      </button>
+      </div>
     </div>
   </div>
 )}
