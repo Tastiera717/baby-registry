@@ -16,7 +16,8 @@ const [message, setMessage] = useState("");
 const [messages, setMessages] = useState<string[]>([]); 
 const [photos, setPhotos] = useState<string[]>([]); 
 const [paymentOpen, setPaymentOpen] = useState(false); 
-const [musicOn, setMusicOn] = useState(false); 
+const [musicOn, setMusicOn] = useState(false);
+const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 useEffect(() => {
   const fetchData = async () => {
     // Scarica le Foto
@@ -199,12 +200,13 @@ Condividi un ricordo per Miki
 </Button> 
 <div className="grid grid-cols-3 gap-2 mt-4"> 
 {photos.map((p, i) => ( 
-<img 
-key={i} 
-src={p} 
-className="w-full h-24 object-cover rounded-xl" 
-/> 
-))} 
+  <img 
+    key={i} 
+    src={p} 
+    onClick={() => setSelectedPhoto(p)} // 👈 Apre la foto
+    className="w-full h-24 object-cover rounded-xl cursor-pointer hover:opacity-80 transition-opacity" 
+  /> 
+))}
 </div> 
 </div> 
 {/* MESSAGGI */} 
@@ -256,6 +258,27 @@ Chiudi
 </div> 
 </div> 
 )} 
+{/* LIGHTBOX PER FOTO A TUTTO SCHERMO */}
+{selectedPhoto && (
+  <div 
+    className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4"
+    onClick={() => setSelectedPhoto(null)} // 👈 Chiude cliccando ovunque
+  >
+    <div className="relative max-w-4xl w-full h-full flex items-center justify-center">
+      <img 
+        src={selectedPhoto} 
+        className="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain"
+        alt="Foto ingrandita"
+      />
+      <button 
+        className="absolute top-0 right-0 text-white text-4xl p-4"
+        onClick={() => setSelectedPhoto(null)}
+      >
+        ×
+      </button>
+    </div>
+  </div>
+)}
 </div> 
 ); 
 }
