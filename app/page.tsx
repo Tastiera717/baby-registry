@@ -203,8 +203,10 @@ Condividi un ricordo per Miki
   <img 
     key={i} 
     src={p} 
-    onClick={() => setSelectedPhoto(p)} // 👈 Apre la foto
-    className="w-full h-24 object-cover rounded-xl cursor-pointer hover:opacity-80 transition-opacity" 
+    // Usiamo onPointerUp per una risposta immediata al tocco del dito
+    onPointerUp={() => setSelectedPhoto(p)} 
+    className="w-full h-24 object-cover rounded-xl cursor-pointer active:scale-95 transition-transform touch-manipulation" 
+    alt="Ricordo"
   /> 
 ))}
 </div> 
@@ -261,17 +263,22 @@ Chiudi
 {/* LIGHTBOX PER FOTO A TUTTO SCHERMO */}
 {selectedPhoto && (
   <div 
-    className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4"
-    onClick={() => setSelectedPhoto(null)} // 👈 Chiude cliccando ovunque
+    className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center"
+    // touch-none impedisce lo scroll della pagina sotto mentre guardi la foto
+    style={{ touchAction: 'none' }}
+    onClick={() => setSelectedPhoto(null)}
   >
-    <div className="relative max-w-4xl w-full h-full flex items-center justify-center">
+    <div className="relative w-full h-full flex items-center justify-center p-2">
       <img 
         src={selectedPhoto} 
-        className="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain"
+        className="max-w-full max-h-full rounded-md object-contain"
         alt="Foto ingrandita"
+        // onClick={(e) => e.stopPropagation()} // Decommenta se vuoi che cliccando sulla foto NON si chiuda
       />
+      
+      {/* Pulsante di chiusura più grande per le dita */}
       <button 
-        className="absolute top-0 right-0 text-white text-4xl p-4"
+        className="absolute top-6 right-6 text-white bg-white/20 rounded-full w-12 h-12 flex items-center justify-center text-3xl"
         onClick={() => setSelectedPhoto(null)}
       >
         ×
