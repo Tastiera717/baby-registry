@@ -200,14 +200,18 @@ Condividi un ricordo per Miki
 </Button> 
 <div className="grid grid-cols-3 gap-2 mt-4"> 
 {photos.map((p, i) => ( 
-  <img 
-    key={i} 
-    src={p} 
-    // Usiamo onPointerUp per una risposta immediata al tocco del dito
-    onPointerUp={() => setSelectedPhoto(p)} 
-    className="w-full h-24 object-cover rounded-xl cursor-pointer active:scale-95 transition-transform touch-manipulation" 
-    alt="Ricordo"
-  /> 
+  <div 
+    key={i}
+    className="relative w-full h-24"
+    onClick={() => setSelectedPhoto(p)} // Spostiamo il click sul contenitore per sicurezza
+  >
+    <img 
+      src={p} 
+      className="w-full h-full object-cover rounded-xl cursor-pointer touch-manipulation" 
+      style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }} // Disabilita "anteprima immagine" su iOS/Android
+      alt="Ricordo"
+    /> 
+  </div>
 ))}
 </div> 
 </div> 
@@ -263,23 +267,26 @@ Chiudi
 {/* LIGHTBOX PER FOTO A TUTTO SCHERMO */}
 {selectedPhoto && (
   <div 
-    className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center"
-    // touch-none impedisce lo scroll della pagina sotto mentre guardi la foto
-    style={{ touchAction: 'none' }}
-    onClick={() => setSelectedPhoto(null)}
+    className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center"
+    style={{ touchAction: 'none' }} // Blocca lo scroll della pagina sotto
+    onClick={() => setSelectedPhoto(null)} // Chiude al click/tocco
   >
-    <div className="relative w-full h-full flex items-center justify-center p-2">
+    <div className="w-full h-full flex items-center justify-center p-4">
       <img 
         src={selectedPhoto} 
-        className="max-w-full max-h-full rounded-md object-contain"
+        className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+        style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
         alt="Foto ingrandita"
-        // onClick={(e) => e.stopPropagation()} // Decommenta se vuoi che cliccando sulla foto NON si chiuda
+        onClick={(e) => e.stopPropagation()} // Se clicchi proprio sulla foto, non chiudere (opzionale, se vuoi che si chiuda cliccando ovunque rimuovi questa riga)
       />
       
-      {/* Pulsante di chiusura più grande per le dita */}
+      {/* Pulsante X molto grande e visibile */}
       <button 
-        className="absolute top-6 right-6 text-white bg-white/20 rounded-full w-12 h-12 flex items-center justify-center text-3xl"
-        onClick={() => setSelectedPhoto(null)}
+        className="absolute top-8 right-8 text-white bg-white/10 rounded-full w-14 h-14 flex items-center justify-center text-4xl border border-white/20"
+        onClick={(e) => {
+          e.stopPropagation();
+          setSelectedPhoto(null);
+        }}
       >
         ×
       </button>
