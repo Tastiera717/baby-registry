@@ -98,7 +98,7 @@ export default function BabyRegistry() {
   };
 
   return ( 
-    <div className="min-h-screen flex flex-col items-center p-4 relative font-dreaming text-blue-800"> 
+    <div className="min-h-screen w-full flex flex-col items-center p-4 relative font-dreaming text-blue-800"> 
       <style>{` 
         @font-face { font-family: 'Dreaming'; src: url('/fonts/dreaming-outloud-pro.woff') format('woff'); font-weight: normal; font-style: normal; } 
         .font-dreaming { font-family: 'Dreaming', cursive; } 
@@ -107,11 +107,17 @@ export default function BabyRegistry() {
           100% { transform: scale(1); opacity: 1; } 
         }
         .animate-center-pop-mobile { animation: centerPopMobile 0.3s ease-out; }
+        
+        /* Forza lo sfondo a ignorare le aree di sicurezza dei browser mobile */
+        .full-bg-fix {
+          height: 100vh;
+          height: -webkit-fill-available;
+        }
       `}</style> 
 
-      {/* SFONDO FISSO COMPLETO */}
+      {/* SFONDO TOTALE - PARTE DA SOPRA LA FOTOCAMERA */}
       <div 
-        className="fixed inset-0 w-full h-full -z-20 bg-no-repeat bg-top" 
+        className="fixed inset-0 w-full full-bg-fix -z-20 bg-no-repeat bg-top pointer-events-none" 
         style={{ 
           backgroundImage: "url('/bg-mobile.png')",
           backgroundSize: "contain", 
@@ -119,7 +125,7 @@ export default function BabyRegistry() {
         }} 
       /> 
       {/* VELO BIANCO FISSO */}
-      <div className="fixed inset-0 w-full h-full bg-white/60 -z-10" /> 
+      <div className="fixed inset-0 w-full full-bg-fix bg-white/60 -z-10 pointer-events-none" /> 
 
       <div className="absolute top-4 right-4 z-50"> 
         <Button onClick={() => setMusicOn((v) => !v)} className={BTN + " !w-14 !p-0"}> 
@@ -131,7 +137,7 @@ export default function BabyRegistry() {
         <iframe title="music" src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0`} allow="autoplay" className="hidden" /> 
       )} 
 
-      <div className="relative z-10 text-center mt-10 mb-6 px-2"> 
+      <div className="relative z-10 text-center mt-12 mb-6 px-2"> 
         <h1 className="text-3xl font-bold">Benvenuto</h1> 
         <h2 className="text-5xl font-extrabold mt-1">Michele</h2> 
         <p className="mt-4 text-base leading-relaxed">
@@ -155,7 +161,7 @@ export default function BabyRegistry() {
             Condividi un ricordo per Michi
           </Button> 
           
-          <div className="grid grid-cols-3 gap-2 mt-4 max-h-72 overflow-y-auto pr-1 scrollbar-hide"> 
+          <div className="grid grid-cols-3 gap-2 mt-4 max-h-[340px] overflow-y-auto pr-1"> 
             {photos.map((p, i) => ( 
               <div key={i} className="relative group">
                 <button
@@ -187,9 +193,9 @@ export default function BabyRegistry() {
 
       {showThanks && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center px-6 pointer-events-none">
-          <div className="bg-white/95 border-2 border-blue-100 rounded-2xl p-4 shadow-xl flex items-center gap-2 animate-center-pop-mobile max-w-[280px]">
+          <div className="bg-white/95 border-2 border-blue-100 rounded-2xl p-4 shadow-xl flex items-center gap-2 animate-center-pop-mobile">
             <span className="text-3xl">🧦🧸</span>
-            <div className="text-blue-800 font-bold text-sm flex items-center gap-1">
+            <div className="text-blue-800 font-bold text-sm whitespace-nowrap">
               Grazie mille da Michi! 💙
             </div>
           </div>
