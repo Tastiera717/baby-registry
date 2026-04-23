@@ -9,15 +9,16 @@ const PAYPAL_EMAIL = "antonio_caringella@libero.it";
 const YT_VIDEO_ID = "lp-EO5I60KA"; 
 const PRIMARY = "text-blue-800"; 
 const BTN = "bg-blue-500 hover:bg-blue-600 text-white rounded-full py-4 text-lg shadow-md w-full"; 
-const CARD = "bg-sky-50 rounded-3xl shadow-lg p-5"; 
+const CARD = "bg-sky-50 rounded-3xl shadow-lg p-5 border border-blue-100"; // 👈 Bordo blu chiaro aggiunto
 
 export default function BabyRegistry() { 
   const [message, setMessage] = useState(""); 
   const [messages, setMessages] = useState<string[]>([]); 
-  const [photos, setPhotos] = useState<string[]>([]); 
+  const [photos, setPhotos] = useState<{url: string, id: number, likes: number}[]>([]); 
   const [paymentOpen, setPaymentOpen] = useState(false); 
   const [musicOn, setMusicOn] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [showThanks, setShowThanks] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,7 +26,7 @@ export default function BabyRegistry() {
         .from("Photos")
         .select("*")
         .order("created_at", { ascending: false });
-      if (photoData) setPhotos(photoData.map((p) => p.url));
+      if (photoData) setPhotos(photoData);
 
       const { data: msgData } = await supabase
         .from("baby-registry")
@@ -35,6 +36,11 @@ export default function BabyRegistry() {
     };
     fetchData();
   }, []);
+
+  const triggerThanks = () => {
+    setShowThanks(true);
+    setTimeout(() => setShowThanks(false), 4000);
+  };
 
   const addMessage = useCallback(async () => { 
     if (!message.trim()) return; 
@@ -46,6 +52,7 @@ export default function BabyRegistry() {
     } 
     setMessages((prev) => [newMessage, ...prev]); 
     setMessage(""); 
+    triggerThanks(); // 👈 Notifica
   }, [message]); 
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { 
@@ -59,27 +66,35 @@ export default function BabyRegistry() {
       const { data: urlData } = supabase.storage.from("Photos").getPublicUrl(filePath); 
       const publicUrl = urlData?.publicUrl; 
       if (publicUrl) { 
-        await supabase.from("Photos").insert([{ url: publicUrl }]); 
-        setPhotos((prev) => [publicUrl, ...prev]); 
+        const { data: newPhoto } = await supabase.from("Photos").insert([{ url: publicUrl, likes: 0 }]).select().single();
+        if (newPhoto) setPhotos((prev) => [newPhoto, ...prev]); 
       } 
-    } 
+    }
+    triggerThanks(); // 👈 Notifica
   }; 
+
+  const handleLike = async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const photo = photos.find(p => p.id === id);
+    if (!photo) return;
+    
+    const newLikes = (photo.likes || 0) + 1;
+    const { error } = await supabase.from("Photos").update({ likes: newLikes }).eq('id', id);
+    
+    if (!error) {
+      setPhotos(prev => prev.map(p => p.id === id ? {...p, likes: newLikes} : p));
+    }
+  };
 
   const babyMessage = "Body e peluche sono adorabili… ma pannolini e notti insonni lo sono un po’ meno 😄 Se vuoi darci una mano, useremo il tutto per affrontare al meglio questa nuova avventura!🦊"; 
 
   return ( 
     <div className="min-h-screen flex flex-col items-center p-4 relative overflow-hidden font-dreaming text-blue-800"> 
-      {/* FONT CUSTOM */}
       <style>{` 
-        @font-face { 
-          font-family: 'Dreaming'; 
-          src: url('/fonts/dreaming-outloud-pro.woff') format('woff'); 
-          font-weight: normal; 
-          font-style: normal; 
-        } 
-        .font-dreaming { 
-          font-family: 'Dreaming', cursive; 
-        } 
+        @font-face { font-family: 'Dreaming'; src: url('/fonts/dreaming-outloud-pro.woff') format('woff'); font-weight: normal; font-style: normal; } 
+        .font-dreaming { font-family: 'Dreaming', cursive; } 
+        @keyframes popIn { 0% { transform: scale(0.8) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+        .animate-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
       `}</style> 
 
       <div className="absolute inset-0 bg-no-repeat bg-top bg-cover" style={{ backgroundImage: "url('/bg-mobile.png')" }} /> 
@@ -95,18 +110,14 @@ export default function BabyRegistry() {
         <iframe title="music" src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0`} allow="autoplay" className="hidden" /> 
       )} 
 
-      {/* HEADER RIPRISTINATO */}
       <div className="relative z-10 text-center mt-10 mb-6 px-2"> 
         <h1 className="text-3xl font-bold">Benvenuto</h1> 
         <h2 className="text-5xl font-extrabold mt-1">Michele</h2> 
-        <p className="mt-4 text-base leading-relaxed">
-          {babyMessage}
-        </p> 
+        <p className="mt-4 text-base leading-relaxed">{babyMessage}</p> 
         <p className="mt-3 text-lg font-semibold">9 ottobre 2026</p> 
       </div> 
 
       <div className="w-full max-w-md space-y-5 z-10 relative"> 
-        {/* MESSAGGIO RIPRISTINATO */}
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
           <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi un messaggio" className="mt-2" /> 
@@ -114,83 +125,77 @@ export default function BabyRegistry() {
           <Button onClick={() => setPaymentOpen(true)} className={`mt-2 ${BTN}`}>Dettagli contributo 🧸</Button> 
         </div> 
 
-        {/* FOTO RIPRISTINATO */}
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
           <input id="galleryInput" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" /> 
           <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>
-            Condividi un ricordo per Miki
+            Condividi un ricordo per Michi
           </Button> 
           
           <div className="grid grid-cols-3 gap-2 mt-4"> 
             {photos.map((p, i) => ( 
-              <button
-                key={i} 
-                type="button"
-                onClick={() => setSelectedPhoto(p)}
-                className="w-full h-24 rounded-xl shadow-sm active:scale-95 transition-transform overflow-hidden border-none p-0 m-0 outline-none"
-                style={{ 
-                  backgroundImage: `url(${p})`, 
-                  backgroundSize: 'cover', 
-                  backgroundPosition: 'center',
-                  WebkitTapHighlightColor: 'transparent',
-                  display: 'block'
-                }}
-              />
+              <div key={i} className="relative group">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPhoto(p.url)}
+                  className="w-full h-24 rounded-xl shadow-sm active:scale-95 transition-transform overflow-hidden border-none p-0 m-0 outline-none"
+                  style={{ backgroundImage: `url(${p.url})`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'block', WebkitTapHighlightColor: 'transparent' }}
+                />
+                <button 
+                  onClick={(e) => handleLike(p.id, e)}
+                  className="absolute bottom-1 right-1 bg-white/80 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs flex items-center gap-1 shadow-sm active:scale-125 transition-all"
+                >
+                  ❤️ <span className="font-sans font-bold">{p.likes || 0}</span>
+                </button>
+              </div>
             ))} 
           </div> 
         </div> 
 
-        {/* MESSAGGI RIPRISTINATO */}
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
           <div className="space-y-2"> 
             {messages.map((m, i) => ( 
-              <div key={i} className="bg-white rounded-xl p-3 text-sm">{m}</div> 
+              <div key={i} className="bg-white border border-blue-50 rounded-xl p-3 text-sm">{m}</div> 
             ))} 
           </div> 
         </div> 
       </div> 
 
+      {/* NOTIFICA DI RINGRAZIAMENTO */}
+      {showThanks && (
+        <div className="fixed bottom-10 z-[10000] px-4 w-full flex justify-center pointer-events-none">
+          <div className="bg-white border-2 border-blue-200 rounded-2xl p-4 shadow-2xl flex items-center gap-3 animate-pop">
+            <span className="text-3xl">🧦🧸</span>
+            <div className="text-blue-800 font-bold">Grazie mille da Michi! 💙</div>
+          </div>
+        </div>
+      )}
+
       {paymentOpen && ( 
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setPaymentOpen(false)}> 
-          <div className="bg-white rounded-3xl p-6 w-[90%] max-w-md" onClick={(e) => e.stopPropagation()}> 
-            <h3 className="text-lg font-semibold mb-4 text-blue-800">🧸 Contributo</h3> 
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4" onClick={() => setPaymentOpen(false)}> 
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}> 
+            <h3 className="text-lg font-semibold mb-4 text-blue-800 text-center uppercase tracking-widest">🧸 Contributo</h3> 
             <div className="space-y-3 text-sm"> 
-              <div className="p-3 bg-sky-50 rounded-xl">
-                <p className="font-semibold">IBAN</p>
-                <p>{IBAN}</p>
+              <div className="p-4 bg-sky-50 rounded-2xl border border-blue-100">
+                <p className="font-bold text-blue-400 text-xs uppercase mb-1">IBAN</p>
+                <p className="font-mono">{IBAN}</p>
               </div> 
-              <div className="p-3 bg-sky-50 rounded-xl">
-                <p className="font-semibold">PayPal</p>
-                <p>{PAYPAL_EMAIL}</p>
+              <div className="p-4 bg-sky-50 rounded-2xl border border-blue-100">
+                <p className="font-bold text-blue-400 text-xs uppercase mb-1">PayPal</p>
+                <p className="font-mono">{PAYPAL_EMAIL}</p>
               </div> 
             </div> 
-            <Button onClick={() => setPaymentOpen(false)} className="mt-5 w-full">Chiudi</Button> 
+            <Button onClick={() => setPaymentOpen(false)} className="mt-5 w-full bg-blue-500 rounded-full py-3">Chiudi</Button> 
           </div> 
         </div> 
       )} 
 
-      {/* LIGHTBOX PER FOTO A TUTTO SCHERMO */}
       {selectedPhoto && (
-        <div 
-          className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999]" 
-          style={{ touchAction: 'none' }}
-          onClick={() => setSelectedPhoto(null)}
-        >
+        <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999]" onClick={() => setSelectedPhoto(null)}>
           <div className="relative w-full h-full flex items-center justify-center">
-            <img 
-              src={selectedPhoto} 
-              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" 
-              alt="Anteprima"
-              onClick={(e) => e.stopPropagation()} 
-            />
-            <button 
-              className="absolute top-0 right-0 p-4 text-white text-6xl leading-none font-light outline-none"
-              onClick={() => setSelectedPhoto(null)}
-            >
-              ×
-            </button>
+            <img src={selectedPhoto} className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" alt="Full" onClick={(e) => e.stopPropagation()} />
+            <button className="absolute top-0 right-0 p-4 text-white text-6xl leading-none font-light outline-none" onClick={() => setSelectedPhoto(null)}>×</button>
           </div>
         </div>
       )}
