@@ -107,19 +107,34 @@ export default function BabyRegistry() {
           100% { transform: scale(1); opacity: 1; } 
         }
         .animate-center-pop-mobile { animation: centerPopMobile 0.3s ease-out; }
+
+        /* Barra di riempimento per l'area della fotocamera/notch */
+        .top-bar-fill {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: env(safe-area-inset-top, 44px);
+          background-color: #f0f9ff;
+          z-index: 100;
+        }
       `}</style> 
 
-      {/* SFONDO ZOOMATO AL 145% E FISSO */}
+      {/* STRISCIA CELESTE PER LA FOTOCAMERA */}
+      <div className="top-bar-fill" />
+
+      {/* SFONDO FISSO ZOOMATO 145% */}
       <div 
         className="fixed inset-0 w-full h-full -z-20 bg-no-repeat bg-top pointer-events-none" 
         style={{ 
           backgroundImage: "url('/bg-mobile.png')",
           backgroundSize: "145%", 
-          backgroundColor: "#f0f9ff" 
+          backgroundColor: "#f0f9ff",
+          marginTop: "-1px" /* Piccola correzione per evitare linee bianche di giunzione */
         }} 
       /> 
 
-      {/* VELO BIANCO FISSO DI CONTRASTO */}
+      {/* VELO BIANCO FISSO */}
       <div className="fixed inset-0 w-full h-full bg-white/60 -z-10 pointer-events-none" /> 
 
       <div className="absolute top-4 right-4 z-50"> 
@@ -132,7 +147,7 @@ export default function BabyRegistry() {
         <iframe title="music" src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0`} allow="autoplay" className="hidden" /> 
       )} 
 
-      <div className="relative z-10 text-center mt-12 mb-6 px-2"> 
+      <div className="relative z-10 text-center mt-16 mb-6 px-2"> 
         <h1 className="text-3xl font-bold">Benvenuto</h1> 
         <h2 className="text-5xl font-extrabold mt-1">Michele</h2> 
         <p className="mt-4 text-base leading-relaxed">
