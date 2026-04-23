@@ -9,7 +9,7 @@ const PAYPAL_EMAIL = "antonio_caringella@libero.it";
 const YT_VIDEO_ID = "lp-EO5I60KA"; 
 const PRIMARY = "text-blue-800"; 
 const BTN = "bg-blue-500 hover:bg-blue-600 text-white rounded-full py-4 text-lg shadow-md w-full"; 
-const CARD = "bg-sky-50 rounded-3xl shadow-lg p-5 border border-blue-100"; // 👈 Bordo blu chiaro aggiunto
+const CARD = "bg-sky-50 rounded-3xl shadow-lg p-5 border border-blue-100"; 
 
 export default function BabyRegistry() { 
   const [message, setMessage] = useState(""); 
@@ -19,8 +19,13 @@ export default function BabyRegistry() {
   const [musicOn, setMusicOn] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [showThanks, setShowThanks] = useState(false);
+  const [userLikes, setUserLikes] = useState<number[]>([]); // Stato per i like locali
 
   useEffect(() => {
+    // Recupera i like salvati localmente al caricamento
+    const savedLikes = localStorage.getItem("michis_likes");
+    if (savedLikes) setUserLikes(JSON.parse(savedLikes));
+
     const fetchData = async () => {
       const { data: photoData } = await supabase
         .from("Photos")
@@ -52,7 +57,7 @@ export default function BabyRegistry() {
     } 
     setMessages((prev) => [newMessage, ...prev]); 
     setMessage(""); 
-    triggerThanks(); // 👈 Notifica
+    triggerThanks();
   }, [message]); 
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { 
@@ -70,7 +75,7 @@ export default function BabyRegistry() {
         if (newPhoto) setPhotos((prev) => [newPhoto, ...prev]); 
       } 
     }
-    triggerThanks(); // 👈 Notifica
+    triggerThanks();
   }; 
 
   const handleLike = async (id: number, e: React.MouseEvent) => {
@@ -78,11 +83,23 @@ export default function BabyRegistry() {
     const photo = photos.find(p => p.id === id);
     if (!photo) return;
     
-    const newLikes = (photo.likes || 0) + 1;
-    const { error } = await supabase.from("Photos").update({ likes: newLikes }).eq('id', id);
+    const isLiked = userLikes.includes(id);
+    const newLikesCount = isLiked ? (photo.likes - 1) : (photo.likes + 1);
+
+    // Aggiorna Supabase
+    const { error } = await supabase.from("Photos").update({ likes: Math.max(0, newLikesCount) }).eq('id', id);
     
     if (!error) {
-      setPhotos(prev => prev.map(p => p.id === id ? {...p, likes: newLikes} : p));
+      // Aggiorna UI locale
+      setPhotos(prev => prev.map(p => p.id === id ? {...p, likes: Math.max(0, newLikesCount)} : p));
+      
+      // Aggiorna LocalStorage
+      const updatedUserLikes = isLiked 
+        ? userLikes.filter(likeId => likeId !== id) 
+        : [...userLikes, id];
+      
+      setUserLikes(updatedUserLikes);
+      localStorage.setItem("michis_likes", JSON.stringify(updatedUserLikes));
     }
   };
 
@@ -143,9 +160,9 @@ export default function BabyRegistry() {
                 />
                 <button 
                   onClick={(e) => handleLike(p.id, e)}
-                  className="absolute bottom-1 right-1 bg-white/80 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs flex items-center gap-1 shadow-sm active:scale-125 transition-all"
+                  className={`absolute bottom-1 right-1 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs flex items-center gap-1 shadow-sm active:scale-125 transition-all ${userLikes.includes(p.id) ? 'bg-red-500 text-white' : 'bg-white/80 text-black'}`}
                 >
-                  ❤️ <span className="font-sans font-bold">{p.likes || 0}</span>
+                  {userLikes.includes(p.id) ? '❤️' : '🤍'} <span className="font-sans font-bold">{p.likes || 0}</span>
                 </button>
               </div>
             ))} 
@@ -162,7 +179,6 @@ export default function BabyRegistry() {
         </div> 
       </div> 
 
-      {/* NOTIFICA DI RINGRAZIAMENTO */}
       {showThanks && (
         <div className="fixed bottom-10 z-[10000] px-4 w-full flex justify-center pointer-events-none">
           <div className="bg-white border-2 border-blue-200 rounded-2xl p-4 shadow-2xl flex items-center gap-3 animate-pop">
