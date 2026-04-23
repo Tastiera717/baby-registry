@@ -107,25 +107,29 @@ export default function BabyRegistry() {
           100% { transform: scale(1); opacity: 1; } 
         }
         .animate-center-pop-mobile { animation: centerPopMobile 0.3s ease-out; }
-        
-        /* Forza lo sfondo a ignorare le aree di sicurezza dei browser mobile */
-        .full-bg-fix {
-          height: 100vh;
-          height: -webkit-fill-available;
-        }
       `}</style> 
 
-      {/* SFONDO TOTALE - PARTE DA SOPRA LA FOTOCAMERA */}
+      {/* SFONDO INFINITO: Gradiente celeste che non finisce mai */}
       <div 
-        className="fixed inset-0 w-full full-bg-fix -z-20 bg-no-repeat bg-top pointer-events-none" 
+        className="fixed inset-0 w-full h-full -z-30" 
         style={{ 
-          backgroundImage: "url('/bg-mobile.png')",
-          backgroundSize: "contain", 
-          backgroundColor: "#f0f9ff" 
+          background: "linear-gradient(to bottom, #e0f2fe 0%, #f0f9ff 100%)",
         }} 
       /> 
-      {/* VELO BIANCO FISSO */}
-      <div className="fixed inset-0 w-full full-bg-fix bg-white/60 -z-10 pointer-events-none" /> 
+
+      {/* IMMAGINE DECORATIVA: Solo in alto, sfumata verso il basso */}
+      <div 
+        className="fixed inset-0 w-full h-full -z-20 bg-no-repeat bg-top pointer-events-none" 
+        style={{ 
+          backgroundImage: "url('/bg-mobile.png')",
+          backgroundSize: "contain",
+          maskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)"
+        }} 
+      /> 
+
+      {/* VELO BIANCO DI CONTRASTO */}
+      <div className="fixed inset-0 w-full h-full bg-white/40 -z-10 pointer-events-none" /> 
 
       <div className="absolute top-4 right-4 z-50"> 
         <Button onClick={() => setMusicOn((v) => !v)} className={BTN + " !w-14 !p-0"}> 
@@ -195,7 +199,7 @@ export default function BabyRegistry() {
         <div className="fixed inset-0 z-[200] flex items-center justify-center px-6 pointer-events-none">
           <div className="bg-white/95 border-2 border-blue-100 rounded-2xl p-4 shadow-xl flex items-center gap-2 animate-center-pop-mobile">
             <span className="text-3xl">🧦🧸</span>
-            <div className="text-blue-800 font-bold text-sm whitespace-nowrap">
+            <div className="text-blue-800 font-bold text-sm whitespace-nowrap flex items-center gap-1">
               Grazie mille da Michi! 💙
             </div>
           </div>
