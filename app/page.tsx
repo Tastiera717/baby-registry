@@ -100,7 +100,7 @@ export default function BabyRegistry() {
   const babyMessage = "Body e peluche sono adorabili… ma pannolini e notti insonni lo sono un po’ meno 😄 Se vuoi darci una mano, useremo il tutto per affrontare al meglio questa nuova avventura!🦊"; 
 
   return ( 
-    <div className="min-h-screen flex flex-col items-center p-4 relative overflow-hidden font-dreaming text-blue-800"> 
+    <div className="min-h-screen flex flex-col items-center p-4 relative font-dreaming text-blue-800"> 
       <style>{` 
         @font-face { font-family: 'Dreaming'; src: url('/fonts/dreaming-outloud-pro.woff') format('woff'); font-weight: normal; font-style: normal; } 
         .font-dreaming { font-family: 'Dreaming', cursive; } 
@@ -111,16 +111,16 @@ export default function BabyRegistry() {
         .animate-center-pop-mobile { animation: centerPopMobile 0.3s ease-out; }
       `}</style> 
 
-      {/* SFONDO OTTIMIZZATO: contain invece di cover per non ingrandire troppo */}
+      {/* SFONDO FISSO: resta visibile anche se scrollo */}
       <div 
-        className="absolute inset-0 bg-no-repeat bg-top" 
+        className="fixed inset-0 bg-no-repeat bg-top -z-10" 
         style={{ 
           backgroundImage: "url('/bg-mobile.png')",
           backgroundSize: "contain", 
-          backgroundColor: "#f0f9ff" // Un azzurro chiarissimo di base per coprire dove finisce l'immagine
+          backgroundColor: "#f0f9ff" 
         }} 
       /> 
-      <div className="absolute inset-0 bg-white/60" /> 
+      <div className="fixed inset-0 bg-white/60 -z-10" /> 
 
       <div className="absolute top-4 right-4 z-50"> 
         <Button onClick={() => setMusicOn((v) => !v)} className={BTN + " !w-14 !p-0"}> 
@@ -139,7 +139,7 @@ export default function BabyRegistry() {
         <p className="mt-3 text-lg font-semibold">9 ottobre 2026</p> 
       </div> 
 
-      <div className="w-full max-w-md space-y-5 z-10 relative"> 
+      <div className="w-full max-w-md space-y-5 z-10 relative pb-10"> 
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
           <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi un messaggio" className="mt-2" /> 
@@ -154,7 +154,8 @@ export default function BabyRegistry() {
             Condividi un ricordo per Michi
           </Button> 
           
-          <div className="grid grid-cols-3 gap-2 mt-4"> 
+          {/* SCROLL INTERNO FOTO */}
+          <div className="grid grid-cols-3 gap-2 mt-4 max-h-72 overflow-y-auto pr-1"> 
             {photos.map((p, i) => ( 
               <div key={i} className="relative group">
                 <button
@@ -165,7 +166,7 @@ export default function BabyRegistry() {
                 />
                 <button 
                   onClick={(e) => handleLike(p.id, e)}
-                  className={`absolute bottom-1 right-1 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs flex items-center gap-1 shadow-sm active:scale-125 transition-all ${userLikes.includes(p.id) ? 'bg-red-500 text-white' : 'bg-white/80 text-black'}`}
+                  className={`absolute bottom-1 right-1 backdrop-blur-sm rounded-full px-2 py-0.5 text-[10px] flex items-center gap-1 shadow-sm active:scale-125 transition-all ${userLikes.includes(p.id) ? 'bg-red-500 text-white' : 'bg-white/80 text-black'}`}
                 >
                   {userLikes.includes(p.id) ? '❤️' : '🤍'} <span className="font-sans font-bold">{p.likes || 0}</span>
                 </button>
@@ -176,7 +177,8 @@ export default function BabyRegistry() {
 
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
-          <div className="space-y-2"> 
+          {/* SCROLL INTERNO MESSAGGI */}
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-1"> 
             {messages.map((m, i) => (  
               <div key={i} className="bg-white border border-blue-50 rounded-xl p-3 text-sm">{m}</div> 
             ))} 
@@ -184,11 +186,12 @@ export default function BabyRegistry() {
         </div> 
       </div> 
 
+      {/* POPUP RINGRAZIAMENTO AGGIORNATO */}
       {showThanks && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center px-6 pointer-events-none">
-          <div className="bg-white/95 border-2 border-blue-100 rounded-2xl p-4 shadow-xl flex items-center gap-3 animate-center-pop-mobile max-w-[250px]">
+          <div className="bg-white/95 border-2 border-blue-100 rounded-2xl p-4 shadow-xl flex items-center gap-3 animate-center-pop-mobile max-w-[280px]">
             <span className="text-3xl">🧦🧸</span>
-            <div className="text-blue-800 font-bold text-sm leading-tight">
+            <div className="text-blue-800 font-bold text-sm whitespace-nowrap flex items-center gap-1">
               Grazie mille da Michi! 💙
             </div>
           </div>
