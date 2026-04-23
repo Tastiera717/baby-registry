@@ -98,7 +98,7 @@ export default function BabyRegistry() {
   };
 
   return ( 
-    <div className="min-h-screen w-full flex flex-col items-center p-4 relative font-dreaming text-blue-800"> 
+    <div className="min-h-screen w-full flex flex-col items-center p-4 relative font-dreaming text-blue-800 overflow-x-hidden"> 
       <style>{` 
         @font-face { font-family: 'Dreaming'; src: url('/fonts/dreaming-outloud-pro.woff') format('woff'); font-weight: normal; font-style: normal; } 
         .font-dreaming { font-family: 'Dreaming', cursive; } 
@@ -109,27 +109,18 @@ export default function BabyRegistry() {
         .animate-center-pop-mobile { animation: centerPopMobile 0.3s ease-out; }
       `}</style> 
 
-      {/* SFONDO INFINITO: Gradiente celeste che non finisce mai */}
-      <div 
-        className="fixed inset-0 w-full h-full -z-30" 
-        style={{ 
-          background: "linear-gradient(to bottom, #e0f2fe 0%, #f0f9ff 100%)",
-        }} 
-      /> 
-
-      {/* IMMAGINE DECORATIVA: Solo in alto, sfumata verso il basso */}
+      {/* SFONDO RIPRISTINATO E POTENZIATO: L'immagine completa è fissa e nitida, il colore continua all'infinito */}
       <div 
         className="fixed inset-0 w-full h-full -z-20 bg-no-repeat bg-top pointer-events-none" 
         style={{ 
           backgroundImage: "url('/bg-mobile.png')",
-          backgroundSize: "contain",
-          maskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)"
+          backgroundSize: "contain", // Mantiene le proporzioni originali senza tagliare
+          backgroundColor: "#f0f9ff" // Colore azzurro continuo che elimina la barra bianca
         }} 
       /> 
 
-      {/* VELO BIANCO DI CONTRASTO */}
-      <div className="fixed inset-0 w-full h-full bg-white/40 -z-10 pointer-events-none" /> 
+      {/* VELO BIANCO FISSO DI CONTRASTO */}
+      <div className="fixed inset-0 w-full h-full bg-white/60 -z-10 pointer-events-none" /> 
 
       <div className="absolute top-4 right-4 z-50"> 
         <Button onClick={() => setMusicOn((v) => !v)} className={BTN + " !w-14 !p-0"}> 
