@@ -109,12 +109,12 @@ export default function BabyRegistry() {
         .animate-center-pop-mobile { animation: centerPopMobile 0.3s ease-out; }
       `}</style> 
 
-      {/* SFONDO RIPRISTINATO E POTENZIATO: L'immagine completa è fissa e nitida, il colore continua all'infinito */}
+      {/* SFONDO ZOOMATO (180%) E FISSO - Disegni nitidi e ingranditi, colore continuo all'infinito */}
       <div 
         className="fixed inset-0 w-full h-full -z-20 bg-no-repeat bg-top pointer-events-none" 
         style={{ 
           backgroundImage: "url('/bg-mobile.png')",
-          backgroundSize: "contain", // Mantiene le proporzioni originali senza tagliare
+          backgroundSize: "180%", // Zoom al 180% per ingrandire i disegni mantenendo la nitidezza
           backgroundColor: "#f0f9ff" // Colore azzurro continuo che elimina la barra bianca
         }} 
       /> 
