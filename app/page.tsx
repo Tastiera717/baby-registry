@@ -109,12 +109,12 @@ export default function BabyRegistry() {
         .animate-center-pop-mobile { animation: centerPopMobile 0.3s ease-out; }
       `}</style> 
 
-      {/* SFONDO ZOOMATO AL 130% E FISSO */}
+      {/* SFONDO ZOOMATO AL 145% E FISSO */}
       <div 
         className="fixed inset-0 w-full h-full -z-20 bg-no-repeat bg-top pointer-events-none" 
         style={{ 
           backgroundImage: "url('/bg-mobile.png')",
-          backgroundSize: "130%", 
+          backgroundSize: "145%", 
           backgroundColor: "#f0f9ff" 
         }} 
       /> 
