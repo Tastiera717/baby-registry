@@ -19,10 +19,9 @@ export default function BabyRegistry() {
   const [musicOn, setMusicOn] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [showThanks, setShowThanks] = useState(false);
-  const [userLikes, setUserLikes] = useState<number[]>([]); // Stato per i like locali
+  const [userLikes, setUserLikes] = useState<number[]>([]);
 
   useEffect(() => {
-    // Recupera i like salvati localmente al caricamento
     const savedLikes = localStorage.getItem("michis_likes");
     if (savedLikes) setUserLikes(JSON.parse(savedLikes));
 
@@ -86,18 +85,13 @@ export default function BabyRegistry() {
     const isLiked = userLikes.includes(id);
     const newLikesCount = isLiked ? (photo.likes - 1) : (photo.likes + 1);
 
-    // Aggiorna Supabase
     const { error } = await supabase.from("Photos").update({ likes: Math.max(0, newLikesCount) }).eq('id', id);
     
     if (!error) {
-      // Aggiorna UI locale
       setPhotos(prev => prev.map(p => p.id === id ? {...p, likes: Math.max(0, newLikesCount)} : p));
-      
-      // Aggiorna LocalStorage
       const updatedUserLikes = isLiked 
         ? userLikes.filter(likeId => likeId !== id) 
         : [...userLikes, id];
-      
       setUserLikes(updatedUserLikes);
       localStorage.setItem("michis_likes", JSON.stringify(updatedUserLikes));
     }
@@ -110,8 +104,11 @@ export default function BabyRegistry() {
       <style>{` 
         @font-face { font-family: 'Dreaming'; src: url('/fonts/dreaming-outloud-pro.woff') format('woff'); font-weight: normal; font-style: normal; } 
         .font-dreaming { font-family: 'Dreaming', cursive; } 
-        @keyframes popIn { 0% { transform: scale(0.8) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
-        .animate-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes centerPop { 
+          0% { transform: scale(0.5); opacity: 0; } 
+          100% { transform: scale(1); opacity: 1; } 
+        }
+        .animate-center-pop { animation: centerPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
       `}</style> 
 
       <div className="absolute inset-0 bg-no-repeat bg-top bg-cover" style={{ backgroundImage: "url('/bg-mobile.png')" }} /> 
@@ -179,11 +176,14 @@ export default function BabyRegistry() {
         </div> 
       </div> 
 
+      {/* NOTIFICA DI RINGRAZIAMENTO AL CENTRO */}
       {showThanks && (
-        <div className="fixed bottom-10 z-[10000] px-4 w-full flex justify-center pointer-events-none">
-          <div className="bg-white border-2 border-blue-200 rounded-2xl p-4 shadow-2xl flex items-center gap-3 animate-pop">
-            <span className="text-3xl">🧦🧸</span>
-            <div className="text-blue-800 font-bold">Grazie mille da Michi! 💙</div>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-6 pointer-events-none bg-black/10 backdrop-blur-[2px]">
+          <div className="bg-white border-4 border-blue-200 rounded-3xl p-8 shadow-2xl flex flex-col items-center gap-4 animate-center-pop max-w-xs text-center">
+            <span className="text-6xl">🧦🧸</span>
+            <div className="text-blue-800 text-2xl font-bold leading-tight">
+              Grazie mille da Michi! 💙
+            </div>
           </div>
         </div>
       )}
