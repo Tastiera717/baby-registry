@@ -43,7 +43,7 @@ export default function BabyRegistry() {
 
   const triggerThanks = () => {
     setShowThanks(true);
-    setTimeout(() => setShowThanks(false), 4000);
+    setTimeout(() => setShowThanks(false), 3000);
   };
 
   const addMessage = useCallback(async () => { 
@@ -104,18 +104,26 @@ export default function BabyRegistry() {
       <style>{` 
         @font-face { font-family: 'Dreaming'; src: url('/fonts/dreaming-outloud-pro.woff') format('woff'); font-weight: normal; font-style: normal; } 
         .font-dreaming { font-family: 'Dreaming', cursive; } 
-        @keyframes centerPop { 
-          0% { transform: scale(0.5); opacity: 0; } 
+        @keyframes centerPopMobile { 
+          0% { transform: scale(0.7); opacity: 0; } 
           100% { transform: scale(1); opacity: 1; } 
         }
-        .animate-center-pop { animation: centerPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .animate-center-pop-mobile { animation: centerPopMobile 0.3s ease-out; }
       `}</style> 
 
-      <div className="absolute inset-0 bg-no-repeat bg-top bg-cover" style={{ backgroundImage: "url('/bg-mobile.png')" }} /> 
-      <div className="absolute inset-0 bg-white/70" /> 
+      {/* SFONDO OTTIMIZZATO: contain invece di cover per non ingrandire troppo */}
+      <div 
+        className="absolute inset-0 bg-no-repeat bg-top" 
+        style={{ 
+          backgroundImage: "url('/bg-mobile.png')",
+          backgroundSize: "contain", 
+          backgroundColor: "#f0f9ff" // Un azzurro chiarissimo di base per coprire dove finisce l'immagine
+        }} 
+      /> 
+      <div className="absolute inset-0 bg-white/60" /> 
 
       <div className="absolute top-4 right-4 z-50"> 
-        <Button onClick={() => setMusicOn((v) => !v)} className={BTN}> 
+        <Button onClick={() => setMusicOn((v) => !v)} className={BTN + " !w-14 !p-0"}> 
           {musicOn ? "🔊" : "🔇"} 
         </Button> 
       </div> 
@@ -169,19 +177,18 @@ export default function BabyRegistry() {
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
           <div className="space-y-2"> 
-            {messages.map((m, i) => ( 
+            {messages.map((m, i) => (  
               <div key={i} className="bg-white border border-blue-50 rounded-xl p-3 text-sm">{m}</div> 
             ))} 
           </div> 
         </div> 
       </div> 
 
-      {/* NOTIFICA DI RINGRAZIAMENTO AL CENTRO */}
       {showThanks && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center px-6 pointer-events-none bg-black/10 backdrop-blur-[2px]">
-          <div className="bg-white border-4 border-blue-200 rounded-3xl p-8 shadow-2xl flex flex-col items-center gap-4 animate-center-pop max-w-xs text-center">
-            <span className="text-6xl">🧦🧸</span>
-            <div className="text-blue-800 text-2xl font-bold leading-tight">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-6 pointer-events-none">
+          <div className="bg-white/95 border-2 border-blue-100 rounded-2xl p-4 shadow-xl flex items-center gap-3 animate-center-pop-mobile max-w-[250px]">
+            <span className="text-3xl">🧦🧸</span>
+            <div className="text-blue-800 font-bold text-sm leading-tight">
               Grazie mille da Michi! 💙
             </div>
           </div>
