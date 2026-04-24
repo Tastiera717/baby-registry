@@ -13,12 +13,13 @@ const PRIMARY = "text-blue-800";
 const BTN = "bg-blue-500 hover:bg-blue-600 text-white rounded-full py-4 text-lg shadow-md w-full"; 
 const CARD = "bg-sky-50 rounded-3xl shadow-lg p-5 border border-blue-100"; 
 const REACTIONS = ["❤️", "🧸", "✨", "👶"];
+const ADMIN_ID = "admin_michi_2026"; // ID Speciale per l'amministratore
 
 export default function BabyRegistry() { 
   const [message, setMessage] = useState(""); 
   const [signature, setSignature] = useState(""); 
-  const [messages, setMessages] = useState<{id: number, text: string, reactions?: any}[]>([]); 
-  const [photos, setPhotos] = useState<{url: string, id: number, reactions?: any}[]>([]); 
+  const [messages, setMessages] = useState<{id: number, text: string, reactions?: any, owner_id?: string}[]>([]); 
+  const [photos, setPhotos] = useState<{url: string, id: number, reactions?: any, owner_id?: string}[]>([]); 
   const [paymentOpen, setPaymentOpen] = useState(false); 
   const [musicOn, setMusicOn] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
@@ -29,37 +30,36 @@ export default function BabyRegistry() {
   const [currentView, setCurrentView] = useState<'all' | 'photos' | 'messages'>('all');
   const [deleteConfirm, setDeleteConfirm] = useState<{id: number, type: 'photo' | 'msg'} | null>(null);
 
-  const [myMessageIds, setMyMessageIds] = useState<number[]>(() => {
+  // Genera o recupera un ID utente persistente
+  const [myId] = useState(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("my_messages");
-      return saved ? JSON.parse(saved) : [];
+      let id = localStorage.getItem("baby_user_id");
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem("baby_user_id", id);
+      }
+      return id;
     }
-    return [];
+    return "";
   });
 
-  const [myPhotoIds, setMyPhotoIds] = useState<number[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("my_photos");
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
+  const isAdmin = myId === ADMIN_ID;
 
   const [myPhotoReactions, setMyPhotoReactions] = useState<Record<number, string>>({});
   const [myMsgReactions, setMyMsgReactions] = useState<Record<number, string>>({});
+
+  const fetchData = async () => {
+    const { data: photoData } = await supabase.from("Photos").select("*").order("created_at", { ascending: false });
+    if (photoData) setPhotos(photoData);
+    const { data: msgData } = await supabase.from("baby-registry").select("*").order("created_at", { ascending: false });
+    if (msgData) setMessages(msgData);
+  };
 
   useEffect(() => {
     const savedPReac = localStorage.getItem("my_p_reac");
     if (savedPReac) setMyPhotoReactions(JSON.parse(savedPReac));
     const savedMReac = localStorage.getItem("my_m_reac");
     if (savedMReac) setMyMsgReactions(JSON.parse(savedMReac));
-
-    const fetchData = async () => {
-      const { data: photoData } = await supabase.from("Photos").select("*").order("created_at", { ascending: false });
-      if (photoData) setPhotos(photoData);
-      const { data: msgData } = await supabase.from("baby-registry").select("*").order("created_at", { ascending: false });
-      if (msgData) setMessages(msgData);
-    };
     fetchData();
   }, []);
 
@@ -77,18 +77,15 @@ export default function BabyRegistry() {
   const addMessage = useCallback(async () => { 
     if (!message.trim()) return; 
     const finalMsg = signature.trim() ? `${message.trim()} \n\n— ${signature.trim()}` : message.trim();
-    const { data, error } = await supabase.from("baby-registry").insert([{ text: finalMsg, reactions: {} }]).select().single(); 
+    const { data, error } = await supabase.from("baby-registry").insert([{ 
+        text: finalMsg, 
+        reactions: {},
+        owner_id: myId 
+    }]).select().single(); 
     if (error) return; 
-    if (data) {
-        setMessages((prev) => [data, ...prev]);
-        setMyMessageIds((prevIds) => {
-            const updated = [...prevIds, data.id];
-            localStorage.setItem("my_messages", JSON.stringify(updated));
-            return updated;
-        });
-    }
+    if (data) setMessages((prev) => [data, ...prev]);
     setMessage(""); setSignature(""); triggerThanks();
-  }, [message, signature]); 
+  }, [message, signature, myId]); 
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { 
     const files = Array.from(e.target.files || []); 
@@ -103,15 +100,12 @@ export default function BabyRegistry() {
         const { data: urlData } = supabase.storage.from("Photos").getPublicUrl(filePath); 
         
         if (urlData?.publicUrl) { 
-          const { data: newPhoto } = await supabase.from("Photos").insert([{ url: urlData.publicUrl, reactions: {} }]).select().single();
-          if (newPhoto) {
-              setPhotos((prev) => [newPhoto, ...prev]);
-              setMyPhotoIds((prevIds) => {
-                  const updated = [...prevIds, newPhoto.id];
-                  localStorage.setItem("my_photos", JSON.stringify(updated));
-                  return updated;
-              });
-          }
+          const { data: newPhoto } = await supabase.from("Photos").insert([{ 
+              url: urlData.publicUrl, 
+              reactions: {},
+              owner_id: myId 
+          }]).select().single();
+          if (newPhoto) setPhotos((prev) => [newPhoto, ...prev]);
         } 
       } catch (err) { console.error(err); }
     }
@@ -129,16 +123,17 @@ export default function BabyRegistry() {
     let updatedMyReactions = { ...myCurrentReactions };
 
     if (previousEmoji === emoji) {
-      currentReactions[emoji] = Math.max(0, (currentReactions[emoji] || 1) - 1);
+      currentReactions[emoji] = Math.max(0, (currentReactions[emoji] || 0) - 1);
       delete updatedMyReactions[id];
     } else {
-      if (previousEmoji) currentReactions[previousEmoji] = Math.max(0, (currentReactions[previousEmoji] || 1) - 1);
+      if (previousEmoji) currentReactions[previousEmoji] = Math.max(0, (currentReactions[previousEmoji] || 0) - 1);
       currentReactions[emoji] = (currentReactions[emoji] || 0) + 1;
       updatedMyReactions[id] = emoji;
     }
 
     const table = type === 'photo' ? "Photos" : "baby-registry";
     const { error } = await supabase.from(table).update({ reactions: currentReactions }).eq('id', id);
+    
     if (!error) {
       if (type === 'photo') {
         setPhotos(prev => prev.map(p => p.id === id ? { ...p, reactions: currentReactions } : p));
@@ -160,18 +155,8 @@ export default function BabyRegistry() {
     
     if (type === 'photo') {
       setPhotos(prev => prev.filter(p => p.id !== id));
-      setMyPhotoIds(prev => {
-          const updated = prev.filter(i => i !== id);
-          localStorage.setItem("my_photos", JSON.stringify(updated));
-          return updated;
-      });
     } else {
       setMessages(prev => prev.filter(m => m.id !== id));
-      setMyMessageIds(prev => {
-          const updated = prev.filter(i => i !== id);
-          localStorage.setItem("my_messages", JSON.stringify(updated));
-          return updated;
-      });
     }
     setDeleteConfirm(null);
   };
@@ -215,7 +200,7 @@ export default function BabyRegistry() {
                       <Camera size={22} /> <span className="font-sans font-bold">Tutte le Foto</span>
                   </button>
                   <button onClick={() => { setCurrentView('messages'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-colors ${currentView === 'messages' ? 'bg-blue-500 text-white shadow-lg' : 'bg-sky-50 text-blue-800'}`}>
-                      <MessageSquare size={22} /> <span className="font-sans font-bold">Messaggi</span>
+                      <MessageSquare size={22} /> <span className="font-sans font-bold">Tutti i messaggi</span>
                   </button>
               </nav>
           </div>
@@ -244,7 +229,7 @@ export default function BabyRegistry() {
 
       <div className="w-full max-w-md space-y-5 z-10 relative pb-20 px-2"> 
         
-        {/* BOX INVIO MESSAGGIO (In Home e Messaggi) */}
+        {/* BOX INVIO MESSAGGIO */}
         {(currentView === 'all' || currentView === 'messages') && (
             <div className={CARD}> 
               <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
@@ -259,7 +244,7 @@ export default function BabyRegistry() {
                         <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
                             <div className="flex justify-between items-start gap-2 mb-2">
                                 <span className="text-sm whitespace-pre-wrap">{m.text}</span>
-                                {myMessageIds.includes(m.id) && (
+                                {(isAdmin || m.owner_id === myId) && (
                                     <button onClick={() => setDeleteConfirm({id: m.id, type: 'msg'})} className="text-red-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
                                 )}
                             </div>
@@ -278,7 +263,7 @@ export default function BabyRegistry() {
             </div> 
         )}
 
-        {/* BOX FOTO (In Home e Foto) */}
+        {/* BOX FOTO */}
         {(currentView === 'all' || currentView === 'photos') && (
             <div className={CARD}> 
                 <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
@@ -290,7 +275,7 @@ export default function BabyRegistry() {
                         <div onClick={() => setSelectedPhoto(p.url)} className={`w-full ${currentView === 'photos' ? 'h-40' : 'h-24'} bg-gray-100`}>
                             <img src={p.url} className="w-full h-full object-cover" alt="Foto" />
                         </div>
-                        {myPhotoIds.includes(p.id) && (
+                        {(isAdmin || p.owner_id === myId) && (
                             <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm({id: p.id, type: 'photo'}); }} className="absolute top-1 left-1 bg-red-500/80 text-white rounded-full p-1 z-10"><Trash2 size={12} /></button>
                         )}
                         <div className="flex justify-around items-center py-1 bg-sky-50/50">
@@ -310,7 +295,7 @@ export default function BabyRegistry() {
             </div> 
         )}
 
-        {/* LISTA MESSAGGI (Solo in Home) */}
+        {/* LISTA MESSAGGI RAPIDA (Home) */}
         {currentView === 'all' && (
             <div className={CARD}> 
                 <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
@@ -319,7 +304,7 @@ export default function BabyRegistry() {
                     <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
                         <div className="flex justify-between items-start gap-2 mb-2">
                             <span className="text-sm whitespace-pre-wrap">{m.text}</span>
-                            {myMessageIds.includes(m.id) && (
+                            {(isAdmin || m.owner_id === myId) && (
                                 <button onClick={() => setDeleteConfirm({id: m.id, type: 'msg'})} className="text-red-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
                             )}
                         </div>
@@ -339,13 +324,13 @@ export default function BabyRegistry() {
         )}
       </div> 
 
-      {/* MODALI RIMASTI INVARIATI */}
+      {/* MODALE CONFERMA ELIMINAZIONE */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center border border-blue-50">
                 <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500"><AlertCircle size={32} /></div>
                 <h3 className="text-xl font-bold text-blue-900 mb-2 font-sans">Sei sicuro?</h3>
-                <p className="text-sm text-blue-800/70 mb-6 font-sans">Vuoi eliminare questo {deleteConfirm.type === 'photo' ? 'ricordo' : 'messaggio'}?</p>
+                <p className="text-sm text-blue-800/70 mb-6 font-sans">Vuoi eliminare questo {deleteConfirm.type === 'photo' ? 'ricordo' : 'messaggio'}? {isAdmin && "(Azione Admin)"}</p>
                 <div className="flex gap-3">
                     <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3 rounded-full bg-gray-100 text-gray-600 font-bold font-sans text-sm">Annulla</button>
                     <button onClick={confirmDeletion} className="flex-1 py-3 rounded-full bg-red-500 text-white font-bold shadow-md font-sans text-sm">Elimina</button>
@@ -362,6 +347,7 @@ export default function BabyRegistry() {
         </div>
       )}
 
+      {/* MODALE PAGAMENTI */}
       {paymentOpen && ( 
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] px-4" onClick={() => setPaymentOpen(false)}> 
           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-center-pop-mobile" onClick={(e) => e.stopPropagation()}> 
