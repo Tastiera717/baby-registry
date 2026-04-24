@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button"; 
 import { Input } from "@/components/ui/input"; 
 import { supabase } from "@/lib/supabase"; 
-import { Trash2, Copy, Check, AlertCircle, Menu, X, Home, Camera, MessageSquare } from "lucide-react"; 
+import { Trash2, Copy, Check, AlertCircle, Menu, X, Home, Camera, MessageSquare, Lock } from "lucide-react"; 
 import imageCompression from 'browser-image-compression';
 
 const IBAN = "IT46K0347501605CC0011358676"; 
@@ -13,6 +13,7 @@ const PRIMARY = "text-blue-800";
 const BTN = "bg-blue-500 hover:bg-blue-600 text-white rounded-full py-4 text-lg shadow-md w-full"; 
 const CARD = "bg-sky-50 rounded-3xl shadow-lg p-5 border border-blue-100"; 
 const REACTIONS = ["❤️", "🧸", "✨", "👶"];
+const ACCESS_PASSWORD = "Babonzo"; // La tua password
 
 export default function BabyRegistry() { 
   const [message, setMessage] = useState(""); 
@@ -26,6 +27,30 @@ export default function BabyRegistry() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
+  // --- LOGICA PASSWORD ---
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passError, setPassError] = useState(false);
+
+  useEffect(() => {
+    const authStatus = localStorage.getItem("baby_auth");
+    if (authStatus === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (passwordInput === ACCESS_PASSWORD) {
+      localStorage.setItem("baby_auth", "true");
+      setIsAuthenticated(true);
+    } else {
+      setPassError(true);
+      setTimeout(() => setPassError(false), 2000);
+    }
+  };
+  // -----------------------
+
   const [currentView, setCurrentView] = useState<'all' | 'photos' | 'messages'>(() => {
     if (typeof window !== "undefined") {
       const savedView = localStorage.getItem("baby_registry_view");
@@ -42,6 +67,8 @@ export default function BabyRegistry() {
   const [myMsgReactions, setMyMsgReactions] = useState<Record<number, string>>({});
 
   useEffect(() => {
+    if (!isAuthenticated) return; // Carica dati solo se autenticato
+
     const savedMsgs = localStorage.getItem("my_messages");
     if (savedMsgs) setMyMessageIds(JSON.parse(savedMsgs));
     
@@ -53,9 +80,7 @@ export default function BabyRegistry() {
 
     const savedMReac = localStorage.getItem("my_m_reac");
     if (savedMReac) setMyMsgReactions(JSON.parse(savedMReac));
-  }, []);
 
-  useEffect(() => {
     const fetchData = async () => {
       const { data: photoData } = await supabase.from("Photos").select("*").order("created_at", { ascending: false });
       if (photoData) {
@@ -74,7 +99,7 @@ export default function BabyRegistry() {
       }
     };
     fetchData();
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     localStorage.setItem("baby_registry_view", currentView);
@@ -199,6 +224,35 @@ export default function BabyRegistry() {
     setDeleteConfirm(null);
   };
 
+  // SCHERMATA DI LOGIN
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center p-6 bg-sky-50 relative font-dreaming overflow-hidden">
+        <style>{`@font-face { font-family: 'Dreaming'; src: url('/fonts/dreaming-outloud-pro.woff') format('woff'); }`}</style>
+        <div className="fixed inset-0 w-full h-full -z-10 bg-no-repeat bg-top opacity-40" style={{ backgroundImage: "url('/bg-mobile.png')", backgroundSize: "145%" }} />
+        <div className="w-full max-w-sm bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-blue-100 text-center animate-center-pop-mobile">
+          <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg text-white">
+            <Lock size={35} />
+          </div>
+          <h2 className="text-3xl font-extrabold text-blue-900 mb-2">Benvenuto</h2>
+          <p className="text-blue-800/70 mb-8 font-sans text-sm">Inserisci la parola magica per entrare nel mondo di Michele 💙</p>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <Input 
+              type="password" 
+              placeholder="La Password..." 
+              value={passwordInput} 
+              onChange={(e) => setPasswordInput(e.target.value)} 
+              className={`text-center py-6 rounded-2xl border-2 transition-all ${passError ? 'border-red-400 shake' : 'border-blue-100 focus:border-blue-500'}`}
+            />
+            {passError && <p className="text-red-500 text-xs font-sans font-bold">Password errata! Riprova 🦊</p>}
+            <Button onClick={() => handleLogin()} className={`${BTN} mt-2`}>Entra ✨</Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // SITO PRINCIPALE
   return ( 
     <div className="min-h-screen w-full flex flex-col items-center p-4 relative font-dreaming text-blue-800 overflow-x-hidden"> 
       <style>{` 
@@ -207,8 +261,11 @@ export default function BabyRegistry() {
         @keyframes centerPopMobile { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         .animate-center-pop-mobile { animation: centerPopMobile 0.3s ease-out; }
         .top-bar-fill { position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 44px); background-color: #f0f9ff; z-index: 100; }
+        .shake { animation: shake 0.5s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
       `}</style> 
 
+      {/* ... Tutto il resto del tuo codice UI rimane IDENTICO a quello fornito prima ... */}
       <div className="top-bar-fill" />
       <div className="fixed inset-0 w-full h-full -z-20 bg-no-repeat bg-top pointer-events-none" style={{ backgroundImage: "url('/bg-mobile.png')", backgroundSize: "145%", backgroundColor: "#f0f9ff", marginTop: "-1px" }} /> 
       <div className="fixed inset-0 w-full h-full bg-white/60 -z-10 pointer-events-none" /> 
@@ -293,7 +350,6 @@ export default function BabyRegistry() {
                     </div> 
                 ))}  
               </div>
-              {/* PULSANTE VEDI TUTTI I MESSAGGI SEMPRE PRESENTE IN HOME */}
               {currentView === 'all' && (
                   <Button variant="ghost" onClick={() => setCurrentView('messages')} className="w-full mt-4 text-blue-400 text-xs uppercase font-bold">Vedi tutti i messaggi</Button>
               )}
@@ -342,7 +398,6 @@ export default function BabyRegistry() {
         )}
       </div> 
 
-      {/* MODALI RIMANENTI */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center border border-blue-50">
