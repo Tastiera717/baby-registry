@@ -25,19 +25,30 @@ export default function BabyRegistry() {
   const [showThanks, setShowThanks] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   
-  // Stato per il modale di cancellazione personalizzato
   const [deleteConfirm, setDeleteConfirm] = useState<{id: number, type: 'photo' | 'msg'} | null>(null);
 
-  const [myMessageIds, setMyMessageIds] = useState<number[]>([]);
-  const [myPhotoIds, setMyPhotoIds] = useState<number[]>([]);
+  // MODIFICA CRUCIALE: Caricamento immediato dei dati dal localStorage
+  const [myMessageIds, setMyMessageIds] = useState<number[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("my_messages");
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+
+  const [myPhotoIds, setMyPhotoIds] = useState<number[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("my_photos");
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+
   const [myPhotoReactions, setMyPhotoReactions] = useState<Record<number, string>>({});
   const [myMsgReactions, setMyMsgReactions] = useState<Record<number, string>>({});
 
   useEffect(() => {
-    const savedMsgIds = localStorage.getItem("my_messages");
-    if (savedMsgIds) setMyMessageIds(JSON.parse(savedMsgIds));
-    const savedPhotoIds = localStorage.getItem("my_photos");
-    if (savedPhotoIds) setMyPhotoIds(JSON.parse(savedPhotoIds));
+    // Carichiamo le reazioni salvate al mount
     const savedPReac = localStorage.getItem("my_p_reac");
     if (savedPReac) setMyPhotoReactions(JSON.parse(savedPReac));
     const savedMReac = localStorage.getItem("my_m_reac");
@@ -70,17 +81,18 @@ export default function BabyRegistry() {
     if (error) return; 
     if (data) {
         setMessages((prev) => [data, ...prev]);
-        const updatedIds = [...myMessageIds, data.id];
-        setMyMessageIds(updatedIds);
-        localStorage.setItem("my_messages", JSON.stringify(updatedIds));
+        setMyMessageIds((prevIds) => {
+            const updated = [...prevIds, data.id];
+            localStorage.setItem("my_messages", JSON.stringify(updated));
+            return updated;
+        });
     }
     setMessage(""); setSignature(""); triggerThanks();
-  }, [message, signature, myMessageIds]); 
+  }, [message, signature]); 
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { 
     const files = Array.from(e.target.files || []); 
     const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1280, useWebWorker: true };
-    let currentIds = [...myPhotoIds];
 
     for (const file of files) { 
       try {
@@ -94,13 +106,15 @@ export default function BabyRegistry() {
           const { data: newPhoto } = await supabase.from("Photos").insert([{ url: urlData.publicUrl, reactions: {} }]).select().single();
           if (newPhoto) {
               setPhotos((prev) => [newPhoto, ...prev]);
-              currentIds.push(newPhoto.id);
+              setMyPhotoIds((prevIds) => {
+                  const updated = [...prevIds, newPhoto.id];
+                  localStorage.setItem("my_photos", JSON.stringify(updated));
+                  return updated;
+              });
           }
         } 
       } catch (err) { console.error(err); }
     }
-    setMyPhotoIds(currentIds);
-    localStorage.setItem("my_photos", JSON.stringify(currentIds));
     triggerThanks();
   }; 
 
@@ -146,14 +160,18 @@ export default function BabyRegistry() {
     
     if (type === 'photo') {
       setPhotos(prev => prev.filter(p => p.id !== id));
-      const updated = myPhotoIds.filter(i => i !== id);
-      setMyPhotoIds(updated);
-      localStorage.setItem("my_photos", JSON.stringify(updated));
+      setMyPhotoIds(prev => {
+          const updated = prev.filter(i => i !== id);
+          localStorage.setItem("my_photos", JSON.stringify(updated));
+          return updated;
+      });
     } else {
       setMessages(prev => prev.filter(m => m.id !== id));
-      const updated = myMessageIds.filter(i => i !== id);
-      setMyMessageIds(updated);
-      localStorage.setItem("my_messages", JSON.stringify(updated));
+      setMyMessageIds(prev => {
+          const updated = prev.filter(i => i !== id);
+          localStorage.setItem("my_messages", JSON.stringify(updated));
+          return updated;
+      });
     }
     setDeleteConfirm(null);
   };
@@ -247,7 +265,6 @@ export default function BabyRegistry() {
         </div> 
       </div> 
 
-      {/* MODALE DI CANCELLAZIONE PERSONALIZZATO */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center border border-blue-50">
@@ -264,7 +281,6 @@ export default function BabyRegistry() {
         </div>
       )}
 
-      {/* POPUP RINGRAZIAMENTO */}
       {showThanks && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/10 backdrop-blur-sm px-6">
           <div className="bg-white p-6 rounded-2xl shadow-2xl animate-center-pop-mobile text-blue-800 font-bold flex items-center gap-3">
@@ -274,7 +290,6 @@ export default function BabyRegistry() {
         </div>
       )}
 
-      {/* MODALE PAGAMENTO */}
       {paymentOpen && ( 
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] px-4" onClick={() => setPaymentOpen(false)}> 
           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-center-pop-mobile" onClick={(e) => e.stopPropagation()}> 
