@@ -27,7 +27,6 @@ export default function BabyRegistry() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{id: number, type: 'photo' | 'msg'} | null>(null);
 
-  // Inizializzazione vista
   const [currentView, setCurrentView] = useState<'all' | 'photos' | 'messages'>(() => {
     if (typeof window !== "undefined") {
       return (localStorage.getItem("current_view") as any) || 'all';
@@ -39,7 +38,6 @@ export default function BabyRegistry() {
     localStorage.setItem("current_view", currentView);
   }, [currentView]);
 
-  // Inizializzazione ID Utente sincrona per evitare blocchi database
   const [myId, setMyId] = useState<string>(() => {
     if (typeof window !== "undefined") {
       let id = localStorage.getItem("baby_user_id");
@@ -86,55 +84,38 @@ export default function BabyRegistry() {
   const addMessage = async () => { 
     if (!message.trim() || !myId) return; 
     const finalMsg = signature.trim() ? `${message.trim()} \n\n— ${signature.trim()}` : message.trim();
-    
     const { data, error } = await supabase.from("baby-registry").insert([{ 
         text: finalMsg, 
         reactions: {},
         owner_id: myId 
     }]).select().single(); 
-    
-    if (error) {
-      console.error("Errore invio messaggio:", error);
-      return;
-    }
-    
+    if (error) return; 
     if (data) {
       setMessages((prev) => [{...data, reactions: {}}, ...prev]);
-      setMessage(""); 
-      setSignature(""); 
-      triggerThanks();
+      setMessage(""); setSignature(""); triggerThanks();
     }
   }; 
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { 
     const files = Array.from(e.target.files || []); 
     if (files.length === 0 || !myId) return;
-
     const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1280, useWebWorker: true };
-    
     for (const file of files) { 
       try {
         const compressedFile = await imageCompression(file, options);
         const filePath = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`; 
-        
         const { error: uploadError } = await supabase.storage.from("Photos").upload(filePath, compressedFile); 
         if (uploadError) throw uploadError; 
-        
         const { data: urlData } = supabase.storage.from("Photos").getPublicUrl(filePath); 
-        
         if (urlData?.publicUrl) { 
-          const { data: newPhoto, error: insertError } = await supabase.from("Photos").insert([{ 
+          const { data: newPhoto } = await supabase.from("Photos").insert([{ 
               url: urlData.publicUrl, 
               reactions: {},
               owner_id: myId 
           }]).select().single();
-          
-          if (insertError) throw insertError;
           if (newPhoto) setPhotos((prev) => [{...newPhoto, reactions: {}}, ...prev]);
         } 
-      } catch (err) { 
-        console.error("Errore upload:", err); 
-      }
+      } catch (err) { console.error(err); }
     }
     triggerThanks();
   }; 
@@ -143,12 +124,10 @@ export default function BabyRegistry() {
     const items = type === 'photo' ? photos : messages;
     const item = items.find(i => i.id === id);
     if (!item) return;
-
     const currentReactions = { ...(item.reactions || {}) };
     const myCurrentReactions = type === 'photo' ? myPhotoReactions : myMsgReactions;
     const previousEmoji = myCurrentReactions[id];
     let updatedMyReactions = { ...myCurrentReactions };
-
     if (previousEmoji === emoji) {
       currentReactions[emoji] = Math.max(0, (currentReactions[emoji] || 0) - 1);
       delete updatedMyReactions[id];
@@ -157,10 +136,8 @@ export default function BabyRegistry() {
       currentReactions[emoji] = (currentReactions[emoji] || 0) + 1;
       updatedMyReactions[id] = emoji;
     }
-
     const table = type === 'photo' ? "Photos" : "baby-registry";
     const { error } = await supabase.from(table).update({ reactions: currentReactions }).eq('id', id);
-    
     if (!error) {
       if (type === 'photo') {
         setPhotos(prev => prev.map(p => p.id === id ? { ...p, reactions: currentReactions } : p));
@@ -179,7 +156,6 @@ export default function BabyRegistry() {
     const { id, type } = deleteConfirm;
     const table = type === 'photo' ? "Photos" : "baby-registry";
     const { error } = await supabase.from(table).delete().eq('id', id);
-    
     if (!error) {
       if (type === 'photo') setPhotos(prev => prev.filter(p => p.id !== id));
       else setMessages(prev => prev.filter(m => m.id !== id));
@@ -335,7 +311,7 @@ export default function BabyRegistry() {
         </div>
       )}
 
-      {/* Pop-up ringraziamento (CORRETTO) */}
+      {/* Pop-up ringraziamento */}
       {showThanks && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/10 backdrop-blur-sm">
             <div className="bg-white p-6 rounded-2xl shadow-2xl animate-center-pop-mobile text-blue-800 font-bold flex items-center gap-2">
@@ -345,22 +321,37 @@ export default function BabyRegistry() {
         </div>
       )}
 
-      {/* Modal Pagamento */}
+      {/* Pop-up Pagamento (RIPRISTINATO) */}
       {paymentOpen && ( 
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] px-4" onClick={() => setPaymentOpen(false)}> 
           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}> 
-            <h3 className="text-lg font-semibold mb-4 text-blue-800 text-center uppercase tracking-widest">🧸 Un pensiero per Michi</h3> 
-            <div className="space-y-3"> 
-              <div className="p-4 bg-sky-50 rounded-2xl border border-blue-100 flex justify-between items-center">
-                <p className="font-mono text-xs truncate">{IBAN}</p>
-                <button onClick={() => copyToClipboard(IBAN, 'iban')} className="ml-2 p-2 bg-white rounded-xl text-blue-500">{copiedField === 'iban' ? <Check size={18} /> : <Copy size={18} />}</button>
-              </div> 
-              <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100 flex justify-between items-center">
-                <p className="font-mono text-xs">{PAYPAL_EMAIL}</p>
-                <button onClick={() => copyToClipboard(PAYPAL_EMAIL, 'paypal')} className="ml-2 p-2 bg-white rounded-xl text-orange-500">{copiedField === 'paypal' ? <Check size={18} /> : <Copy size={18} />}</button>
-              </div> 
+            <h3 className="text-lg font-semibold mb-6 text-blue-800 text-center uppercase tracking-widest border-b border-blue-50 pb-2">🧸 Un pensiero per Michi</h3> 
+            
+            <div className="space-y-4"> 
+              {/* Sezione IBAN */}
+              <div>
+                <span className="text-xs font-bold text-blue-400 uppercase ml-1">IBAN</span>
+                <div className="mt-1 p-4 bg-sky-50 rounded-2xl border border-blue-100 flex justify-between items-center">
+                  <p className="font-mono text-[10px] sm:text-xs truncate text-blue-900">{IBAN}</p>
+                  <button onClick={() => copyToClipboard(IBAN, 'iban')} className="ml-2 p-2 bg-white rounded-xl text-blue-500 shadow-sm active:scale-90 transition-transform">
+                    {copiedField === 'iban' ? <Check size={18} /> : <Copy size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Sezione PayPal */}
+              <div>
+                <span className="text-xs font-bold text-orange-400 uppercase ml-1">PayPal</span>
+                <div className="mt-1 p-4 bg-orange-50 rounded-2xl border border-orange-100 flex justify-between items-center">
+                  <p className="font-mono text-xs text-orange-900">{PAYPAL_EMAIL}</p>
+                  <button onClick={() => copyToClipboard(PAYPAL_EMAIL, 'paypal')} className="ml-2 p-2 bg-white rounded-xl text-orange-500 shadow-sm active:scale-90 transition-transform">
+                    {copiedField === 'paypal' ? <Check size={18} /> : <Copy size={18} />}
+                  </button>
+                </div>
+              </div>
             </div> 
-            <Button onClick={() => setPaymentOpen(false)} className="mt-5 w-full bg-blue-500 rounded-full py-3">Chiudi</Button> 
+
+            <Button onClick={() => setPaymentOpen(false)} className="mt-8 w-full bg-blue-500 rounded-full py-4 font-bold shadow-lg">Chiudi</Button> 
           </div> 
         </div> 
       )} 
