@@ -199,7 +199,8 @@ export default function BabyRegistry() {
                 <h1 className="text-3xl font-bold">Benvenuto</h1> 
                 <h2 className="text-5xl font-extrabold mt-1 text-blue-900">Michele</h2> 
                 <div className="mt-6 space-y-4 text-base leading-relaxed max-w-sm mx-auto text-blue-800">
-                    <p>Abbiamo creato questo spazio per raccogliere i vostri <b>messaggi</b> e le <b>foto ricordo</b> più belle.</p>
+                    <p>Abbiamo creato questo spazio per raccogliere i vostri <b>messaggi</b> e le <b>foto ricordo</b> più belle, così da iniziare a scrivere insieme il primo capitolo della vita di Michi.</p>
+                    <p>Sappiamo che body e peluche sono adorabili… ma pannolini e notti insonni lo sono un po’ meno 😄 Se desiderate partecipare a questa avventura con un piccolo pensiero, ve ne saremo molto grati e ci aiuterete ad affrontare al meglio ogni nuova sfida! 🦊</p>
                 </div>
                 <p className="mt-4 text-lg font-semibold border-t border-blue-200 pt-4 inline-block px-8">9 ottobre 2026</p> 
               </>
@@ -213,7 +214,7 @@ export default function BabyRegistry() {
             <div className={CARD}> 
               <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
               <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi un messaggio" className="mt-2" /> 
-              <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Tua firma" className="mt-2 text-sm italic" /> 
+              <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Tua firma (opzionale)" className="mt-2 text-sm italic" /> 
               <Button onClick={addMessage} className={`mt-3 ${BTN}`}>Invia 💙</Button> 
               {currentView === 'all' && <Button onClick={() => setPaymentOpen(true)} className={`mt-2 ${BTN}`}>Un pensiero per Michi 🧸</Button>}
               {currentView === 'messages' && (
@@ -243,7 +244,7 @@ export default function BabyRegistry() {
             <div className={CARD}> 
                 <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
                 <input id="galleryInput" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" /> 
-                <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo</Button> 
+                <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo per Michi</Button> 
                 <div className={`grid ${currentView === 'photos' ? 'grid-cols-2' : 'grid-cols-3'} gap-2 mt-4`}> 
                     {photos.map((p) => ( 
                     <div key={p.id} className="relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border border-sky-200">
@@ -260,7 +261,7 @@ export default function BabyRegistry() {
                     </div>
                     ))} 
                 </div> 
-                {currentView === 'all' && <Button variant="ghost" onClick={() => setCurrentView('photos')} className="w-full mt-4 text-blue-400 text-xs uppercase font-bold">Vedi tutte le foto</Button>}
+                {currentView === 'all' && <Button variant="ghost" onClick={() => setCurrentView('photos')} className="w-full mt-4 text-blue-400 text-xs uppercase font-bold">Vedi tutti i ricordi</Button>}
             </div> 
         )}
 
@@ -292,7 +293,7 @@ export default function BabyRegistry() {
 
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
-            <div className="bg-white rounded-3xl p-6 w-full max-w-xs text-center">
+            <div className="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl">
                 <h3 className="text-xl font-bold text-blue-900 mb-2">Eliminare?</h3>
                 <div className="flex gap-3">
                     <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3 rounded-full bg-gray-100">No</button>
@@ -307,7 +308,7 @@ export default function BabyRegistry() {
       {paymentOpen && ( 
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] px-4" onClick={() => setPaymentOpen(false)}> 
           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}> 
-            <h3 className="text-lg font-semibold mb-4 text-blue-800 text-center uppercase tracking-widest">🧸 Pensiero per Michi</h3> 
+            <h3 className="text-lg font-semibold mb-4 text-blue-800 text-center uppercase tracking-widest">🧸 Un pensiero per Michi</h3> 
             <div className="space-y-3"> 
               <div className="p-4 bg-sky-50 rounded-2xl border border-blue-100 flex justify-between items-center">
                 <p className="font-mono text-xs truncate">{IBAN}</p>
