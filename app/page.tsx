@@ -13,7 +13,6 @@ const PRIMARY = "text-blue-800";
 const BTN = "bg-blue-500 hover:bg-blue-600 text-white rounded-full py-4 text-lg shadow-md w-full"; 
 const CARD = "bg-sky-50 rounded-3xl shadow-lg p-5 border border-blue-100"; 
 const REACTIONS = ["❤️", "🧸", "✨", "👶"];
-const ADMIN_ID = "admin_michi_2026"; // ID Speciale per l'amministratore
 
 export default function BabyRegistry() { 
   const [message, setMessage] = useState(""); 
@@ -27,10 +26,23 @@ export default function BabyRegistry() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<'all' | 'photos' | 'messages'>('all');
   const [deleteConfirm, setDeleteConfirm] = useState<{id: number, type: 'photo' | 'msg'} | null>(null);
 
-  // Genera o recupera un ID utente persistente
+  // Mantiene la vista corrente dopo il refresh
+  const [currentView, setCurrentView] = useState<'all' | 'photos' | 'messages'>(() => {
+    if (typeof window !== "undefined") {
+      const savedView = localStorage.getItem("current_view");
+      return (savedView as 'all' | 'photos' | 'messages') || 'all';
+    }
+    return 'all';
+  });
+
+  // Salva la vista quando cambia
+  useEffect(() => {
+    localStorage.setItem("current_view", currentView);
+  }, [currentView]);
+
+  // ID utente persistente per la cancellazione dei propri contenuti
   const [myId] = useState(() => {
     if (typeof window !== "undefined") {
       let id = localStorage.getItem("baby_user_id");
@@ -43,16 +55,16 @@ export default function BabyRegistry() {
     return "";
   });
 
-  const isAdmin = myId === ADMIN_ID;
-
   const [myPhotoReactions, setMyPhotoReactions] = useState<Record<number, string>>({});
   const [myMsgReactions, setMyMsgReactions] = useState<Record<number, string>>({});
 
   const fetchData = async () => {
     const { data: photoData } = await supabase.from("Photos").select("*").order("created_at", { ascending: false });
-    if (photoData) setPhotos(photoData);
     const { data: msgData } = await supabase.from("baby-registry").select("*").order("created_at", { ascending: false });
-    if (msgData) setMessages(msgData);
+    
+    // Assicuriamoci che le reazioni siano inizializzate se null
+    if (photoData) setPhotos(photoData.map(p => ({...p, reactions: p.reactions || {}})));
+    if (msgData) setMessages(msgData.map(m => ({...m, reactions: m.reactions || {}})));
   };
 
   useEffect(() => {
@@ -83,7 +95,7 @@ export default function BabyRegistry() {
         owner_id: myId 
     }]).select().single(); 
     if (error) return; 
-    if (data) setMessages((prev) => [data, ...prev]);
+    if (data) setMessages((prev) => [{...data, reactions: {}}, ...prev]);
     setMessage(""); setSignature(""); triggerThanks();
   }, [message, signature, myId]); 
 
@@ -105,7 +117,7 @@ export default function BabyRegistry() {
               reactions: {},
               owner_id: myId 
           }]).select().single();
-          if (newPhoto) setPhotos((prev) => [newPhoto, ...prev]);
+          if (newPhoto) setPhotos((prev) => [{...newPhoto, reactions: {}}, ...prev]);
         } 
       } catch (err) { console.error(err); }
     }
@@ -241,133 +253,4 @@ export default function BabyRegistry() {
               {currentView === 'messages' && (
                   <div className="space-y-4 mt-6 border-t border-blue-100 pt-4 max-h-[60vh] overflow-y-auto"> 
                     {messages.map((m) => (  
-                        <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
-                            <div className="flex justify-between items-start gap-2 mb-2">
-                                <span className="text-sm whitespace-pre-wrap">{m.text}</span>
-                                {(isAdmin || m.owner_id === myId) && (
-                                    <button onClick={() => setDeleteConfirm({id: m.id, type: 'msg'})} className="text-red-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
-                                )}
-                            </div>
-                            <div className="flex gap-4 border-t border-gray-50 pt-2">
-                                {REACTIONS.map(emoji => (
-                                <button key={emoji} onClick={() => handleGenericReaction(m.id, emoji, 'msg')} className={`flex items-center gap-1 px-2 py-0.5 rounded-full transition-all ${myMsgReactions[m.id] === emoji ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
-                                    <span className="text-xs">{emoji}</span>
-                                    <span className="text-[10px] font-sans font-bold">{m.reactions?.[emoji] || 0}</span>
-                                </button>
-                                ))}
-                            </div>
-                        </div> 
-                    ))} 
-                  </div>
-              )}
-            </div> 
-        )}
-
-        {/* BOX FOTO */}
-        {(currentView === 'all' || currentView === 'photos') && (
-            <div className={CARD}> 
-                <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
-                <input id="galleryInput" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" /> 
-                <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo per Michi</Button> 
-                <div className={`grid ${currentView === 'photos' ? 'grid-cols-2' : 'grid-cols-3'} gap-2 mt-4 overflow-y-auto pr-1`}> 
-                    {photos.map((p) => ( 
-                    <div key={p.id} className="relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border border-sky-200">
-                        <div onClick={() => setSelectedPhoto(p.url)} className={`w-full ${currentView === 'photos' ? 'h-40' : 'h-24'} bg-gray-100`}>
-                            <img src={p.url} className="w-full h-full object-cover" alt="Foto" />
-                        </div>
-                        {(isAdmin || p.owner_id === myId) && (
-                            <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm({id: p.id, type: 'photo'}); }} className="absolute top-1 left-1 bg-red-500/80 text-white rounded-full p-1 z-10"><Trash2 size={12} /></button>
-                        )}
-                        <div className="flex justify-around items-center py-1 bg-sky-50/50">
-                            {REACTIONS.map(emoji => (
-                                <button key={emoji} onClick={() => handleGenericReaction(p.id, emoji, 'photo')} className={`flex flex-col items-center ${myPhotoReactions[p.id] === emoji ? 'scale-110 bg-blue-100 rounded-md px-0.5' : ''}`}>
-                                    <span className="text-xs">{emoji}</span>
-                                    <span className="text-[8px] font-sans font-bold">{p.reactions?.[emoji] || 0}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                    ))} 
-                </div> 
-                {currentView === 'all' && (
-                    <Button variant="ghost" onClick={() => setCurrentView('photos')} className="w-full mt-4 text-blue-400 text-xs uppercase font-bold">Vedi tutti i ricordi</Button>
-                )}
-            </div> 
-        )}
-
-        {/* LISTA MESSAGGI RAPIDA (Home) */}
-        {currentView === 'all' && (
-            <div className={CARD}> 
-                <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
-                <div className="space-y-4 max-h-80 overflow-y-auto pr-1"> 
-                    {messages.map((m) => (  
-                    <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
-                        <div className="flex justify-between items-start gap-2 mb-2">
-                            <span className="text-sm whitespace-pre-wrap">{m.text}</span>
-                            {(isAdmin || m.owner_id === myId) && (
-                                <button onClick={() => setDeleteConfirm({id: m.id, type: 'msg'})} className="text-red-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
-                            )}
-                        </div>
-                        <div className="flex gap-4 border-t border-gray-50 pt-2">
-                            {REACTIONS.map(emoji => (
-                            <button key={emoji} onClick={() => handleGenericReaction(m.id, emoji, 'msg')} className={`flex items-center gap-1 px-2 py-0.5 rounded-full transition-all ${myMsgReactions[m.id] === emoji ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
-                                <span className="text-xs">{emoji}</span>
-                                <span className="text-[10px] font-sans font-bold">{m.reactions?.[emoji] || 0}</span>
-                            </button>
-                            ))}
-                        </div>
-                    </div> 
-                    ))} 
-                </div> 
-                <Button variant="ghost" onClick={() => setCurrentView('messages')} className="w-full mt-2 text-blue-400 text-xs uppercase font-bold">Vedi tutti i messaggi</Button>
-            </div> 
-        )}
-      </div> 
-
-      {/* MODALE CONFERMA ELIMINAZIONE */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
-            <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center border border-blue-50">
-                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500"><AlertCircle size={32} /></div>
-                <h3 className="text-xl font-bold text-blue-900 mb-2 font-sans">Sei sicuro?</h3>
-                <p className="text-sm text-blue-800/70 mb-6 font-sans">Vuoi eliminare questo {deleteConfirm.type === 'photo' ? 'ricordo' : 'messaggio'}? {isAdmin && "(Azione Admin)"}</p>
-                <div className="flex gap-3">
-                    <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3 rounded-full bg-gray-100 text-gray-600 font-bold font-sans text-sm">Annulla</button>
-                    <button onClick={confirmDeletion} className="flex-1 py-3 rounded-full bg-red-500 text-white font-bold shadow-md font-sans text-sm">Elimina</button>
-                </div>
-            </div>
-        </div>
-      )}
-
-      {showThanks && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/10 backdrop-blur-sm px-6">
-          <div className="bg-white p-6 rounded-2xl shadow-2xl animate-center-pop-mobile text-blue-800 font-bold flex items-center gap-3">
-            <span className="text-xl">🧦 🧸</span> <span className="text-lg">Grazie da Michi! 💙</span>
-          </div>
-        </div>
-      )}
-
-      {/* MODALE PAGAMENTI */}
-      {paymentOpen && ( 
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] px-4" onClick={() => setPaymentOpen(false)}> 
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-center-pop-mobile" onClick={(e) => e.stopPropagation()}> 
-            <h3 className="text-lg font-semibold mb-4 text-blue-800 text-center uppercase tracking-widest">🧸 Un pensiero per Michi</h3> 
-            <div className="space-y-3"> 
-              <div className="p-4 bg-sky-50 rounded-2xl border border-blue-100 flex justify-between items-center">
-                <div className="overflow-hidden"><p className="font-bold text-blue-400 text-[10px] uppercase mb-1">IBAN</p><p className="font-mono text-xs truncate">{IBAN}</p></div>
-                <button onClick={() => copyToClipboard(IBAN, 'iban')} className="ml-2 p-2 bg-white rounded-xl shadow-sm text-blue-500">{copiedField === 'iban' ? <Check size={18} /> : <Copy size={18} />}</button>
-              </div> 
-              <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100 flex justify-between items-center">
-                <div><p className="font-bold text-orange-400 text-[10px] uppercase mb-1">PayPal</p><p className="font-mono text-xs">{PAYPAL_EMAIL}</p></div>
-                <button onClick={() => copyToClipboard(PAYPAL_EMAIL, 'paypal')} className="ml-2 p-2 bg-white rounded-xl shadow-sm text-orange-500">{copiedField === 'paypal' ? <Check size={18} /> : <Copy size={18} />}</button>
-              </div> 
-            </div> 
-            <Button onClick={() => setPaymentOpen(false)} className="mt-5 w-full bg-blue-500 rounded-full py-3">Chiudi</Button> 
-          </div> 
-        </div> 
-      )} 
-
-      {selectedPhoto && <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999]" onClick={() => setSelectedPhoto(null)}><img src={selectedPhoto} className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" alt="Zoom" /></div>}
-    </div> 
-  ); 
-}
+                        <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-
