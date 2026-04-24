@@ -56,7 +56,7 @@ export default function BabyRegistry() {
     if (savedMReac) setMyMsgReactions(JSON.parse(savedMReac));
   }, []);
 
-  // Fetch dei dati dal DB (MODIFICATO per gestire correttamente l'oggetto reactions)
+  // Fetch dei dati dal DB con pulizia oggetti reactions
   useEffect(() => {
     const fetchData = async () => {
       const { data: photoData } = await supabase.from("Photos").select("*").order("created_at", { ascending: false });
@@ -137,13 +137,12 @@ export default function BabyRegistry() {
     triggerThanks();
   }; 
 
-  // Gestione Reaction (MODIFICATO per risolvere il bug del refresh)
+  // Gestione Reaction con update forzato e gestione tipi
   const handleGenericReaction = async (id: number, emoji: string, type: 'photo' | 'msg') => {
     const items = type === 'photo' ? photos : messages;
     const item = items.find(i => i.id === id);
     if (!item) return;
 
-    // Creiamo una copia pulita dell'oggetto reactions
     const currentReactions = item.reactions && typeof item.reactions === 'object' 
         ? { ...item.reactions } 
         : {};
@@ -153,21 +152,19 @@ export default function BabyRegistry() {
     let updatedMyReactions = { ...myCurrentReactions };
 
     if (previousEmoji === emoji) {
-      // Caso: Rimuovo la mia reaction esistente
-      currentReactions[emoji] = Math.max(0, (currentReactions[emoji] || 1) - 1);
+      currentReactions[emoji] = Math.max(0, (Number(currentReactions[emoji]) || 1) - 1);
       delete updatedMyReactions[id];
     } else {
-      // Caso: Cambio reaction o ne aggiungo una nuova
       if (previousEmoji) {
-        currentReactions[previousEmoji] = Math.max(0, (currentReactions[previousEmoji] || 1) - 1);
+        currentReactions[previousEmoji] = Math.max(0, (Number(currentReactions[previousEmoji]) || 1) - 1);
       }
-      currentReactions[emoji] = (currentReactions[emoji] || 0) + 1;
+      currentReactions[emoji] = (Number(currentReactions[emoji]) || 0) + 1;
       updatedMyReactions[id] = emoji;
     }
 
     const table = type === 'photo' ? "Photos" : "baby-registry";
     
-    // Update atomico su Supabase
+    // Update su Supabase
     const { error } = await supabase.from(table).update({ reactions: currentReactions }).eq('id', id);
     
     if (!error) {
@@ -230,7 +227,6 @@ export default function BabyRegistry() {
         </Button>
       </div>
 
-      {/* MENU LATERALE */}
       <div className={`fixed inset-0 z-[200] transition-opacity duration-300 ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
           <div className="absolute inset-0 bg-blue-900/20 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
           <div className={`absolute top-0 left-0 h-full w-72 bg-white shadow-2xl transition-transform duration-300 flex flex-col p-6 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -274,7 +270,6 @@ export default function BabyRegistry() {
 
       <div className="w-full max-w-md space-y-5 z-10 relative pb-20 px-2"> 
         
-        {/* BOX INVIO MESSAGGIO */}
         {(currentView === 'all' || currentView === 'messages') && (
             <div className={CARD}> 
               <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
@@ -308,7 +303,6 @@ export default function BabyRegistry() {
             </div> 
         )}
 
-        {/* BOX FOTO */}
         {(currentView === 'all' || currentView === 'photos') && (
             <div className={CARD}> 
                 <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
@@ -340,7 +334,6 @@ export default function BabyRegistry() {
             </div> 
         )}
 
-        {/* LISTA MESSAGGI COMPATTA IN HOME */}
         {currentView === 'all' && (
             <div className={CARD}> 
                 <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
@@ -369,7 +362,6 @@ export default function BabyRegistry() {
         )}
       </div> 
 
-      {/* MODALI */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center border border-blue-50">
