@@ -13,7 +13,7 @@ const PRIMARY = "text-blue-800";
 const BTN = "bg-blue-500 hover:bg-blue-600 text-white rounded-full py-4 text-lg shadow-md w-full"; 
 const CARD = "bg-sky-50 rounded-3xl shadow-lg p-5 border border-blue-100"; 
 const REACTIONS = ["❤️", "🧸", "✨", "👶"];
-const ACCESS_PASSWORD = "Babonzo"; // La tua password
+const ACCESS_PASSWORD = "Babonzo!"; // La tua password
 
 export default function BabyRegistry() { 
   const [message, setMessage] = useState(""); 
