@@ -251,7 +251,7 @@ export default function BabyRegistry() {
                 <h1 className="text-3xl font-bold">Benvenuto</h1> 
                 <h2 className="text-5xl font-extrabold mt-1 text-blue-900">Michele</h2> 
                 <div className="mt-6 space-y-4 text-base leading-relaxed max-w-sm mx-auto text-blue-800">
-                    <p>Abbiamo creato questo spazio per raccogliere i vostri <b>messaggi</b> e le <b>foto ricordo</b> più belle, così da iniziare a scrivere insieme il primo capitolo della vita di Michi💙</p>
+                    <p>Abbiamo creato questo spazio per raccogliere i vostri <b>messaggi</b> e le <b>foto ricordo</b> più belle, così da iniziare a scrivere insieme il primo capitolo della vita di Michi!💙</p>
                     <p>Sappiamo che body e peluche sono adorabili… ma pannolini e notti insonni lo sono un po’ meno 😄 Se desiderate partecipare a questa avventura con un piccolo pensiero, ve ne saremo molto grati e ci aiuterete ad affrontare al meglio ogni nuova sfida! 🦊</p>
                 </div>
                 <p className="mt-4 text-lg font-semibold border-t border-blue-200 pt-4 inline-block px-8">9 ottobre 2026</p> 
