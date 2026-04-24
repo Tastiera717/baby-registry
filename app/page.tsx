@@ -108,7 +108,6 @@ export default function BabyRegistry() {
         }
         .animate-center-pop-mobile { animation: centerPopMobile 0.3s ease-out; }
 
-        /* Barra di riempimento per l'area della fotocamera/notch */
         .top-bar-fill {
           position: fixed;
           top: 0;
@@ -120,21 +119,18 @@ export default function BabyRegistry() {
         }
       `}</style> 
 
-      {/* STRISCIA CELESTE PER LA FOTOCAMERA */}
       <div className="top-bar-fill" />
 
-      {/* SFONDO FISSO ZOOMATO 145% */}
       <div 
         className="fixed inset-0 w-full h-full -z-20 bg-no-repeat bg-top pointer-events-none" 
         style={{ 
           backgroundImage: "url('/bg-mobile.png')",
           backgroundSize: "145%", 
           backgroundColor: "#f0f9ff",
-          marginTop: "-1px" /* Piccola correzione per evitare linee bianche di giunzione */
+          marginTop: "-1px"
         }} 
       /> 
 
-      {/* VELO BIANCO FISSO */}
       <div className="fixed inset-0 w-full h-full bg-white/60 -z-10 pointer-events-none" /> 
 
       <div className="absolute top-4 right-4 z-50"> 
@@ -147,13 +143,21 @@ export default function BabyRegistry() {
         <iframe title="music" src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0`} allow="autoplay" className="hidden" /> 
       )} 
 
-      <div className="relative z-10 text-center mt-16 mb-6 px-2"> 
+      {/* SEZIONE INTRODUTTIVA AGGIORNATA */}
+      <div className="relative z-10 text-center mt-16 mb-6 px-4"> 
         <h1 className="text-3xl font-bold">Benvenuto</h1> 
-        <h2 className="text-5xl font-extrabold mt-1">Michele</h2> 
-        <p className="mt-4 text-base leading-relaxed">
-          Body e peluche sono adorabili… ma pannolini e notti insonni lo sono un po’ meno 😄 Se vuoi darci una mano, useremo il tutto per affrontare al meglio questa nuova avventura!🦊
-        </p> 
-        <p className="mt-3 text-lg font-semibold">9 ottobre 2026</p> 
+        <h2 className="text-5xl font-extrabold mt-1 text-blue-900">Michele</h2> 
+        
+        <div className="mt-6 space-y-4 text-base leading-relaxed max-w-sm mx-auto text-blue-800">
+          <p>
+            Abbiamo creato questo spazio per raccogliere i vostri <b>messaggi</b> e le <b>foto ricordo</b> più belle, così da iniziare a scrivere insieme il primo capitolo della vita di Michi.
+          </p>
+          <p>
+            Sappiamo che body e peluche sono adorabili… ma pannolini e notti insonni lo sono un po’ meno 😄 Se desiderate partecipare a questa avventura con un piccolo pensiero, ve ne saremo molto grati e ci aiuterete ad affrontare al meglio ogni nuova sfida! 🦊
+          </p>
+        </div>
+        
+        <p className="mt-4 text-lg font-semibold border-t border-blue-200 pt-4 inline-block px-8">9 ottobre 2026</p> 
       </div> 
 
       <div className="w-full max-w-md space-y-5 z-10 relative pb-20"> 
@@ -177,7 +181,7 @@ export default function BabyRegistry() {
                 <button
                   type="button"
                   onClick={() => setSelectedPhoto(p.url)}
-                  className="w-full h-24 rounded-xl shadow-sm active:scale-95 transition-transform overflow-hidden border-none p-0 m-0 outline-none"
+                  className="w-full h-24 rounded-xl shadow-xl active:scale-95 transition-transform overflow-hidden border-none p-0 m-0 outline-none"
                   style={{ backgroundImage: `url(${p.url})`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'block', WebkitTapHighlightColor: 'transparent' }}
                 />
                 <button 
