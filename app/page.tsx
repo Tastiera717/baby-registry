@@ -237,7 +237,7 @@ export default function BabyRegistry() {
                       <Camera size={22} /> <span className="font-sans font-bold">Tutte le Foto</span>
                   </button>
                   <button onClick={() => { setCurrentView('messages'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-colors ${currentView === 'messages' ? 'bg-blue-500 text-white shadow-lg' : 'bg-sky-50 text-blue-800'}`}>
-                      <MessageSquare size={22} /> <span className="font-sans font-bold">Messaggi</span>
+                      <MessageSquare size={22} /> <span className="font-sans font-bold">Tutti i Messaggi</span>
                   </button>
               </nav>
           </div>
@@ -303,7 +303,7 @@ export default function BabyRegistry() {
         {currentView === 'all' && (
             <div className={CARD}> 
               <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
-              <p className="mt-2 text-sm text-blue-800/80 italic">Se desideri partecipare con un pensiero clicca sotto:</p>
+              <p className="mt-2 text-sm text-blue-800/80 italic">Se desideri partecipare con un pensiero clicca sotto</p>
               <Button onClick={() => setPaymentOpen(true)} className={`mt-3 ${BTN}`}>Un pensiero per Michi 🧸</Button>
             </div> 
         )}
