@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button"; 
 import { Input } from "@/components/ui/input"; 
 import { supabase } from "@/lib/supabase"; 
-import { Trash2, Copy, Check } from "lucide-react"; 
+import { Trash2, Copy, Check, AlertCircle } from "lucide-react"; 
 import imageCompression from 'browser-image-compression';
 
 const IBAN = "IT46K0347501605CC0011358676"; 
@@ -12,7 +12,6 @@ const YT_VIDEO_ID = "lp-EO5I60KA";
 const PRIMARY = "text-blue-800"; 
 const BTN = "bg-blue-500 hover:bg-blue-600 text-white rounded-full py-4 text-lg shadow-md w-full"; 
 const CARD = "bg-sky-50 rounded-3xl shadow-lg p-5 border border-blue-100"; 
-
 const REACTIONS = ["❤️", "🧸", "✨", "👶"];
 
 export default function BabyRegistry() { 
@@ -26,16 +25,22 @@ export default function BabyRegistry() {
   const [showThanks, setShowThanks] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   
+  // Stati per la cancellazione "carina"
+  const [deleteConfirm, setDeleteConfirm] = useState<{id: number, type: 'photo' | 'msg'} | null>(null);
+
   const [myMessageIds, setMyMessageIds] = useState<number[]>([]);
   const [myPhotoIds, setMyPhotoIds] = useState<number[]>([]);
   const [myPhotoReactions, setMyPhotoReactions] = useState<Record<number, string>>({});
   const [myMsgReactions, setMyMsgReactions] = useState<Record<number, string>>({});
 
   useEffect(() => {
+    // Caricamento persistente dal browser
     const savedMsgIds = localStorage.getItem("my_messages");
     if (savedMsgIds) setMyMessageIds(JSON.parse(savedMsgIds));
+    
     const savedPhotoIds = localStorage.getItem("my_photos");
     if (savedPhotoIds) setMyPhotoIds(JSON.parse(savedPhotoIds));
+
     const savedPReac = localStorage.getItem("my_p_reac");
     if (savedPReac) setMyPhotoReactions(JSON.parse(savedPReac));
     const savedMReac = localStorage.getItem("my_m_reac");
@@ -65,24 +70,21 @@ export default function BabyRegistry() {
     if (!message.trim()) return; 
     const finalMsg = signature.trim() ? `${message.trim()} \n\n— ${signature.trim()}` : message.trim();
     const { data, error } = await supabase.from("baby-registry").insert([{ text: finalMsg, reactions: {} }]).select().single(); 
-    if (error) { alert(error.message); return; } 
+    if (error) return; 
     if (data) {
         setMessages((prev) => [data, ...prev]);
-        setMyMessageIds((prevIds) => {
-            const updated = [...prevIds, data.id];
-            localStorage.setItem("my_messages", JSON.stringify(updated));
-            return updated;
-        });
+        const updatedIds = [...myMessageIds, data.id];
+        setMyMessageIds(updatedIds);
+        localStorage.setItem("my_messages", JSON.stringify(updatedIds));
     }
-    setMessage(""); 
-    setSignature("");
-    triggerThanks();
-  }, [message, signature]); 
+    setMessage(""); setSignature(""); triggerThanks();
+  }, [message, signature, myMessageIds]); 
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { 
     const files = Array.from(e.target.files || []); 
     const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1280, useWebWorker: true };
-    
+    let newIds = [...myPhotoIds];
+
     for (const file of files) { 
       try {
         const compressedFile = await imageCompression(file, options);
@@ -95,15 +97,13 @@ export default function BabyRegistry() {
           const { data: newPhoto } = await supabase.from("Photos").insert([{ url: urlData.publicUrl, reactions: {} }]).select().single();
           if (newPhoto) {
               setPhotos((prev) => [newPhoto, ...prev]);
-              setMyPhotoIds((prevIds) => {
-                  const updated = [...prevIds, newPhoto.id];
-                  localStorage.setItem("my_photos", JSON.stringify(updated));
-                  return updated;
-              });
+              newIds.push(newPhoto.id);
           }
         } 
       } catch (err) { console.error(err); }
     }
+    setMyPhotoIds(newIds);
+    localStorage.setItem("my_photos", JSON.stringify(newIds));
     triggerThanks();
   }; 
 
@@ -111,7 +111,6 @@ export default function BabyRegistry() {
     const items = type === 'photo' ? photos : messages;
     const item = items.find(i => i.id === id);
     if (!item) return;
-
     const currentReactions = { ...(item.reactions || {}) };
     const myCurrentReactions = type === 'photo' ? myPhotoReactions : myMsgReactions;
     const previousEmoji = myCurrentReactions[id];
@@ -128,7 +127,6 @@ export default function BabyRegistry() {
 
     const table = type === 'photo' ? "Photos" : "baby-registry";
     const { error } = await supabase.from(table).update({ reactions: currentReactions }).eq('id', id);
-    
     if (!error) {
       if (type === 'photo') {
         setPhotos(prev => prev.map(p => p.id === id ? { ...p, reactions: currentReactions } : p));
@@ -142,29 +140,25 @@ export default function BabyRegistry() {
     }
   };
 
-  const deletePhoto = async (id: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm("Vuoi davvero cancellare questa foto?")) return;
-    await supabase.from("Photos").delete().eq('id', id);
-    setPhotos(prev => prev.filter(p => p.id !== id));
-    // Rimuovo l'id dai miei caricamenti per pulizia
-    setMyPhotoIds(prev => {
-        const updated = prev.filter(item => item !== id);
-        localStorage.setItem("my_photos", JSON.stringify(updated));
-        return updated;
-    });
-  };
-
-  const deleteMessage = async (id: number) => {
-    if (!confirm("Vuoi davvero cancellare questo messaggio?")) return;
-    await supabase.from("baby-registry").delete().eq('id', id);
-    setMessages(prev => prev.filter(m => m.id !== id));
-    // Rimuovo l'id dai miei messaggi per pulizia
-    setMyMessageIds(prev => {
-        const updated = prev.filter(item => item !== id);
-        localStorage.setItem("my_messages", JSON.stringify(updated));
-        return updated;
-    });
+  const confirmDeletion = async () => {
+    if (!deleteConfirm) return;
+    const { id, type } = deleteConfirm;
+    const table = type === 'photo' ? "Photos" : "baby-registry";
+    
+    await supabase.from(table).delete().eq('id', id);
+    
+    if (type === 'photo') {
+      setPhotos(prev => prev.filter(p => p.id !== id));
+      const updated = myPhotoIds.filter(i => i !== id);
+      setMyPhotoIds(updated);
+      localStorage.setItem("my_photos", JSON.stringify(updated));
+    } else {
+      setMessages(prev => prev.filter(m => m.id !== id));
+      const updated = myMessageIds.filter(i => i !== id);
+      setMyMessageIds(updated);
+      localStorage.setItem("my_messages", JSON.stringify(updated));
+    }
+    setDeleteConfirm(null);
   };
 
   return ( 
@@ -181,22 +175,23 @@ export default function BabyRegistry() {
       <div className="fixed inset-0 w-full h-full -z-20 bg-no-repeat bg-top pointer-events-none" style={{ backgroundImage: "url('/bg-mobile.png')", backgroundSize: "145%", backgroundColor: "#f0f9ff", marginTop: "-1px" }} /> 
       <div className="fixed inset-0 w-full h-full bg-white/60 -z-10 pointer-events-none" /> 
 
+      {/* Controllo Musica */}
       <div className="absolute top-4 right-4 z-50"> 
         <Button onClick={() => setMusicOn((v) => !v)} className={BTN + " !w-14 !p-0"}>{musicOn ? "🔊" : "🔇"}</Button> 
       </div> 
-
       {musicOn && <iframe title="music" src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0`} allow="autoplay" className="hidden" />} 
 
+      {/* Header */}
       <div className="relative z-10 text-center mt-16 mb-6 px-4"> 
         <h1 className="text-3xl font-bold">Benvenuto</h1> 
         <h2 className="text-5xl font-extrabold mt-1 text-blue-900">Michele</h2> 
         <div className="mt-6 space-y-4 text-base leading-relaxed max-w-sm mx-auto text-blue-800">
-          <p>Abbiamo creato questo spazio per raccogliere i vostri <b>messaggi</b> e le <b>foto ricordo</b> più belle, così da iniziare a scrivere insieme il primo capitolo della vita di Michi.</p>
-          <p>Sappiamo che body e peluche sono adorabili… ma pannolini e notti insonni lo sono un po’ meno 😄 Se desiderate partecipare a questa avventura con un piccolo pensiero, ve ne saremo molto grati e ci aiuterete ad affrontare al meglio ogni nuova sfida! 🦊</p>
+          <p>Abbiamo creato questo spazio per raccogliere i vostri <b>messaggi</b> e le <b>foto ricordo</b> più belle.</p>
         </div>
         <p className="mt-4 text-lg font-semibold border-t border-blue-200 pt-4 inline-block px-8">9 ottobre 2026</p> 
       </div> 
 
+      {/* Main Content */}
       <div className="w-full max-w-md space-y-5 z-10 relative pb-20"> 
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
@@ -206,11 +201,11 @@ export default function BabyRegistry() {
           <Button onClick={() => setPaymentOpen(true)} className={`mt-2 ${BTN}`}>Un pensiero per Michi 🧸</Button> 
         </div> 
 
+        {/* Gallery */}
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
           <input id="galleryInput" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" /> 
-          <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo per Michi</Button> 
-          
+          <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo</Button> 
           <div className="grid grid-cols-3 gap-2 mt-4 max-h-[500px] overflow-y-auto pr-1"> 
             {photos.map((p) => ( 
               <div key={p.id} className="relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border border-sky-200">
@@ -218,11 +213,11 @@ export default function BabyRegistry() {
                   <img src={p.url} className="w-full h-full object-cover" alt="Foto" />
                 </div>
                 {myPhotoIds.includes(p.id) && (
-                    <button onClick={(e) => deletePhoto(p.id, e)} className="absolute top-1 left-1 bg-red-500/80 text-white rounded-full p-1 z-10"><Trash2 size={10} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm({id: p.id, type: 'photo'}); }} className="absolute top-1 left-1 bg-red-500/80 text-white rounded-full p-1 z-10"><Trash2 size={10} /></button>
                 )}
                 <div className="flex justify-around items-center py-1 bg-sky-50/50">
                     {REACTIONS.map(emoji => (
-                        <button key={emoji} onClick={() => handleGenericReaction(p.id, emoji, 'photo')} className={`flex flex-col items-center transition-all ${myPhotoReactions[p.id] === emoji ? 'scale-110 bg-blue-100 rounded-md px-0.5' : ''}`}>
+                        <button key={emoji} onClick={() => handleGenericReaction(p.id, emoji, 'photo')} className={`flex flex-col items-center ${myPhotoReactions[p.id] === emoji ? 'scale-110 bg-blue-100 rounded-md px-0.5' : ''}`}>
                             <span className="text-xs">{emoji}</span>
                             <span className="text-[8px] font-sans font-bold">{p.reactions?.[emoji] || 0}</span>
                         </button>
@@ -233,6 +228,7 @@ export default function BabyRegistry() {
           </div> 
         </div> 
 
+        {/* Messages */}
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
           <div className="space-y-4 max-h-80 overflow-y-auto pr-1"> 
@@ -241,7 +237,7 @@ export default function BabyRegistry() {
                   <div className="flex justify-between items-start gap-2 mb-2">
                     <span className="text-sm whitespace-pre-wrap">{m.text}</span>
                     {myMessageIds.includes(m.id) && (
-                        <button onClick={() => deleteMessage(m.id)} className="text-red-300"><Trash2 size={14} /></button>
+                        <button onClick={() => setDeleteConfirm({id: m.id, type: 'msg'})} className="text-red-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
                     )}
                   </div>
                   <div className="flex gap-4 border-t border-gray-50 pt-2">
@@ -258,35 +254,24 @@ export default function BabyRegistry() {
         </div> 
       </div> 
 
-      {paymentOpen && ( 
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] px-4" onClick={() => setPaymentOpen(false)}> 
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-center-pop-mobile" onClick={(e) => e.stopPropagation()}> 
-            <h3 className="text-lg font-semibold mb-4 text-blue-800 text-center uppercase tracking-widest">🧸 Un pensiero per Michi</h3> 
-            <div className="space-y-3"> 
-              <div className="p-4 bg-sky-50 rounded-2xl border border-blue-100 flex justify-between items-center">
-                <div className="overflow-hidden">
-                    <p className="font-bold text-blue-400 text-[10px] uppercase mb-1">IBAN</p>
-                    <p className="font-mono text-xs truncate">{IBAN}</p>
+      {/* MODALE DI CANCELLAZIONE CARINO */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
+            <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center">
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+                    <AlertCircle size={32} />
                 </div>
-                <button onClick={() => copyToClipboard(IBAN, 'iban')} className="ml-2 p-2 bg-white rounded-xl shadow-sm text-blue-500">
-                    {copiedField === 'iban' ? <Check size={18} /> : <Copy size={18} />}
-                </button>
-              </div> 
-              <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100 flex justify-between items-center">
-                <div>
-                    <p className="font-bold text-orange-400 text-[10px] uppercase mb-1">PayPal</p>
-                    <p className="font-mono text-xs">{PAYPAL_EMAIL}</p>
+                <h3 className="text-xl font-bold text-blue-900 mb-2">Sei sicuro?</h3>
+                <p className="text-sm text-blue-800/70 mb-6">Questa azione non può essere annullata. Vuoi davvero eliminare questo {deleteConfirm.type === 'photo' ? 'ricordo' : 'messaggio'}?</p>
+                <div className="flex gap-3">
+                    <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3 rounded-full bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition-colors">Annulla</button>
+                    <button onClick={confirmDeletion} className="flex-1 py-3 rounded-full bg-red-500 text-white font-bold hover:bg-red-600 shadow-md transition-colors">Elimina</button>
                 </div>
-                <button onClick={() => copyToClipboard(PAYPAL_EMAIL, 'paypal')} className="ml-2 p-2 bg-white rounded-xl shadow-sm text-orange-500">
-                    {copiedField === 'paypal' ? <Check size={18} /> : <Copy size={18} />}
-                </button>
-              </div> 
-            </div> 
-            <Button onClick={() => setPaymentOpen(false)} className="mt-5 w-full bg-blue-500 rounded-full py-3">Chiudi</Button> 
-          </div> 
-        </div> 
-      )} 
+            </div>
+        </div>
+      )}
 
+      {/* POPUP RINGRAZIAMENTO */}
       {showThanks && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/10 backdrop-blur-sm px-6">
           <div className="bg-white p-6 rounded-2xl shadow-2xl animate-center-pop-mobile text-blue-800 font-bold flex items-center gap-3">
@@ -296,7 +281,28 @@ export default function BabyRegistry() {
         </div>
       )}
 
-      {selectedPhoto && <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999]" onClick={() => setSelectedPhoto(null)}><img src={selectedPhoto} className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" alt="Zoom" /></div>}
+      {/* MODALE PAGAMENTO */}
+      {paymentOpen && ( 
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] px-4" onClick={() => setPaymentOpen(false)}> 
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-center-pop-mobile" onClick={(e) => e.stopPropagation()}> 
+            <h3 className="text-lg font-semibold mb-4 text-blue-800 text-center uppercase tracking-widest">🧸 Un pensiero per Michi</h3> 
+            <div className="space-y-3"> 
+              <div className="p-4 bg-sky-50 rounded-2xl border border-blue-100 flex justify-between items-center">
+                <div className="overflow-hidden"><p className="font-bold text-blue-400 text-[10px] uppercase mb-1">IBAN</p><p className="font-mono text-xs truncate">{IBAN}</p></div>
+                <button onClick={() => copyToClipboard(IBAN, 'iban')} className="ml-2 p-2 bg-white rounded-xl shadow-sm text-blue-500">{copiedField === 'iban' ? <Check size={18} /> : <Copy size={18} />}</button>
+              </div> 
+              <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100 flex justify-between items-center">
+                <div><p className="font-bold text-orange-400 text-[10px] uppercase mb-1">PayPal</p><p className="font-mono text-xs">{PAYPAL_EMAIL}</p></div>
+                <button onClick={() => copyToClipboard(PAYPAL_EMAIL, 'paypal')} className="ml-2 p-2 bg-white rounded-xl shadow-sm text-orange-500">{copiedField === 'paypal' ? <Check size={18} /> : <Copy size={18} />}</button>
+              </div> 
+            </div> 
+            <Button onClick={() => setPaymentOpen(false)} className="mt-5 w-full bg-blue-500 rounded-full py-3">Chiudi</Button> 
+          </div> 
+        </div> 
+      )} 
+
+      {/* ZOOM FOTO */}
+      {selectedPhoto && <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999]" onClick={() => setSelectedPhoto(null)}><img src={selectedPhoto} className="max-w-full max-h-[90vh] object-contain rounded-lg" alt="Zoom" /></div>}
     </div> 
   ); 
 }
