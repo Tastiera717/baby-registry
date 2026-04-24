@@ -215,7 +215,7 @@ export default function BabyRegistry() {
                       <Camera size={22} /> <span className="font-sans font-bold">Tutte le Foto</span>
                   </button>
                   <button onClick={() => { setCurrentView('messages'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-colors ${currentView === 'messages' ? 'bg-blue-500 text-white shadow-lg' : 'bg-sky-50 text-blue-800'}`}>
-                      <MessageSquare size={22} /> <span className="font-sans font-bold">Tutti i Messaggi</span>
+                      <MessageSquare size={22} /> <span className="font-sans font-bold">Messaggi</span>
                   </button>
               </nav>
           </div>
@@ -223,7 +223,7 @@ export default function BabyRegistry() {
 
       {musicOn && <iframe title="music" src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0`} allow="autoplay" className="hidden" />} 
 
-      {/* HEADER TITOLO + FRASE RIPRISTINATA */}
+      {/* HEADER TITOLO */}
       <div className="relative z-10 text-center mt-20 mb-6 px-4"> 
           {currentView === 'all' ? (
               <>
@@ -237,7 +237,7 @@ export default function BabyRegistry() {
               </>
           ) : (
               <h2 className="text-4xl font-extrabold text-blue-900">
-                  {currentView === 'photos' ? '📸 Foto Ricordo' : '💌 Messaggi Dolci'}
+                  {currentView === 'photos' ? '📸 Foto Ricordo' : '💌 Messaggi'}
               </h2>
           )}
       </div>
@@ -310,10 +310,10 @@ export default function BabyRegistry() {
             </div> 
         )}
 
-        {/* LISTA MESSAGGI (Solo in Home, compatta) */}
+        {/* LISTA MESSAGGI (Solo in Home) */}
         {currentView === 'all' && (
             <div className={CARD}> 
-                <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi recenti</h2> 
+                <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
                 <div className="space-y-4 max-h-80 overflow-y-auto pr-1"> 
                     {messages.map((m) => (  
                     <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
@@ -339,7 +339,7 @@ export default function BabyRegistry() {
         )}
       </div> 
 
-      {/* MODALI (Confirm, Payment, Thanks, Zoom) */}
+      {/* MODALI RIMASTI INVARIATI */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center border border-blue-50">
