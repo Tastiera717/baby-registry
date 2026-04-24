@@ -68,18 +68,21 @@ export default function BabyRegistry() {
     if (error) { alert(error.message); return; } 
     if (data) {
         setMessages((prev) => [data, ...prev]);
-        const updatedIds = [...myMessageIds, data.id];
-        setMyMessageIds(updatedIds);
-        localStorage.setItem("my_messages", JSON.stringify(updatedIds));
+        setMyMessageIds((prevIds) => {
+            const updated = [...prevIds, data.id];
+            localStorage.setItem("my_messages", JSON.stringify(updated));
+            return updated;
+        });
     }
     setMessage(""); 
     setSignature("");
     triggerThanks();
-  }, [message, signature, myMessageIds]); 
+  }, [message, signature]); 
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { 
     const files = Array.from(e.target.files || []); 
     const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1280, useWebWorker: true };
+    
     for (const file of files) { 
       try {
         const compressedFile = await imageCompression(file, options);
@@ -87,13 +90,16 @@ export default function BabyRegistry() {
         const { error: uploadError } = await supabase.storage.from("Photos").upload(filePath, compressedFile); 
         if (uploadError) continue; 
         const { data: urlData } = supabase.storage.from("Photos").getPublicUrl(filePath); 
+        
         if (urlData?.publicUrl) { 
           const { data: newPhoto } = await supabase.from("Photos").insert([{ url: urlData.publicUrl, reactions: {} }]).select().single();
           if (newPhoto) {
               setPhotos((prev) => [newPhoto, ...prev]);
-              const updatedIds = [...myPhotoIds, newPhoto.id];
-              setMyPhotoIds(updatedIds);
-              localStorage.setItem("my_photos", JSON.stringify(updatedIds));
+              setMyPhotoIds((prevIds) => {
+                  const updated = [...prevIds, newPhoto.id];
+                  localStorage.setItem("my_photos", JSON.stringify(updated));
+                  return updated;
+              });
           }
         } 
       } catch (err) { console.error(err); }
@@ -141,12 +147,24 @@ export default function BabyRegistry() {
     if (!confirm("Vuoi davvero cancellare questa foto?")) return;
     await supabase.from("Photos").delete().eq('id', id);
     setPhotos(prev => prev.filter(p => p.id !== id));
+    // Rimuovo l'id dai miei caricamenti per pulizia
+    setMyPhotoIds(prev => {
+        const updated = prev.filter(item => item !== id);
+        localStorage.setItem("my_photos", JSON.stringify(updated));
+        return updated;
+    });
   };
 
   const deleteMessage = async (id: number) => {
     if (!confirm("Vuoi davvero cancellare questo messaggio?")) return;
     await supabase.from("baby-registry").delete().eq('id', id);
     setMessages(prev => prev.filter(m => m.id !== id));
+    // Rimuovo l'id dai miei messaggi per pulizia
+    setMyMessageIds(prev => {
+        const updated = prev.filter(item => item !== id);
+        localStorage.setItem("my_messages", JSON.stringify(updated));
+        return updated;
+    });
   };
 
   return ( 
@@ -195,7 +213,7 @@ export default function BabyRegistry() {
           
           <div className="grid grid-cols-3 gap-2 mt-4 max-h-[500px] overflow-y-auto pr-1"> 
             {photos.map((p) => ( 
-              <div key={p.id} className="relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border border-blue-50">
+              <div key={p.id} className="relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border border-sky-200">
                 <div onClick={() => setSelectedPhoto(p.url)} className="w-full h-24 bg-gray-100">
                   <img src={p.url} className="w-full h-full object-cover" alt="Foto" />
                 </div>
@@ -269,7 +287,6 @@ export default function BabyRegistry() {
         </div> 
       )} 
 
-      {/* POPUP RINGRAZIAMENTO CON SFONDO SFOCATO (Backdrop Blur) */}
       {showThanks && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/10 backdrop-blur-sm px-6">
           <div className="bg-white p-6 rounded-2xl shadow-2xl animate-center-pop-mobile text-blue-800 font-bold flex items-center gap-3">
