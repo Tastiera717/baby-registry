@@ -223,12 +223,17 @@ export default function BabyRegistry() {
 
       {musicOn && <iframe title="music" src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0`} allow="autoplay" className="hidden" />} 
 
-      {/* HEADER TITOLO */}
+      {/* HEADER TITOLO + FRASE RIPRISTINATA */}
       <div className="relative z-10 text-center mt-20 mb-6 px-4"> 
           {currentView === 'all' ? (
               <>
                 <h1 className="text-3xl font-bold">Benvenuto</h1> 
                 <h2 className="text-5xl font-extrabold mt-1 text-blue-900">Michele</h2> 
+                <div className="mt-6 space-y-4 text-base leading-relaxed max-w-sm mx-auto text-blue-800">
+                    <p>Abbiamo creato questo spazio per raccogliere i vostri <b>messaggi</b> e le <b>foto ricordo</b> più belle, così da iniziare a scrivere insieme il primo capitolo della vita di Michi.</p>
+                    <p>Sappiamo che body e peluche sono adorabili… ma pannolini e notti insonni lo sono un po’ meno 😄 Se desiderate partecipare a questa avventura con un piccolo pensiero, ve ne saremo molto grati e ci aiuterete ad affrontare al meglio ogni nuova sfida! 🦊</p>
+                </div>
+                <p className="mt-4 text-lg font-semibold border-t border-blue-200 pt-4 inline-block px-8">9 ottobre 2026</p> 
               </>
           ) : (
               <h2 className="text-4xl font-extrabold text-blue-900">
@@ -239,7 +244,7 @@ export default function BabyRegistry() {
 
       <div className="w-full max-w-md space-y-5 z-10 relative pb-20 px-2"> 
         
-        {/* BOX MESSAGGI (Solo in Home o Sezione Messaggi) */}
+        {/* BOX INVIO MESSAGGIO (In Home e Messaggi) */}
         {(currentView === 'all' || currentView === 'messages') && (
             <div className={CARD}> 
               <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
@@ -273,7 +278,7 @@ export default function BabyRegistry() {
             </div> 
         )}
 
-        {/* BOX FOTO (Solo in Home o Sezione Foto) */}
+        {/* BOX FOTO (In Home e Foto) */}
         {(currentView === 'all' || currentView === 'photos') && (
             <div className={CARD}> 
                 <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
@@ -299,6 +304,9 @@ export default function BabyRegistry() {
                     </div>
                     ))} 
                 </div> 
+                {currentView === 'all' && (
+                    <Button variant="ghost" onClick={() => setCurrentView('photos')} className="w-full mt-4 text-blue-400 text-xs uppercase font-bold">Vedi tutti i ricordi</Button>
+                )}
             </div> 
         )}
 
@@ -331,7 +339,7 @@ export default function BabyRegistry() {
         )}
       </div> 
 
-      {/* MODALI RIMASTI INVARIATI */}
+      {/* MODALI (Confirm, Payment, Thanks, Zoom) */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center border border-blue-50">
