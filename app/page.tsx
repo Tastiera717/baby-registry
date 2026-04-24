@@ -41,7 +41,7 @@ export default function BabyRegistry() {
   const [myPhotoReactions, setMyPhotoReactions] = useState<Record<number, string>>({});
   const [myMsgReactions, setMyMsgReactions] = useState<Record<number, string>>({});
 
-  // Inizializzazione dati dal localStorage (solo lato client)
+  // Inizializzazione dati dal localStorage
   useEffect(() => {
     const savedMsgs = localStorage.getItem("my_messages");
     if (savedMsgs) setMyMessageIds(JSON.parse(savedMsgs));
@@ -56,14 +56,24 @@ export default function BabyRegistry() {
     if (savedMReac) setMyMsgReactions(JSON.parse(savedMReac));
   }, []);
 
-  // Fetch dei dati dal DB
+  // Fetch dei dati dal DB (MODIFICATO per gestire correttamente l'oggetto reactions)
   useEffect(() => {
     const fetchData = async () => {
       const { data: photoData } = await supabase.from("Photos").select("*").order("created_at", { ascending: false });
-      if (photoData) setPhotos(photoData.map(p => ({...p, reactions: p.reactions || {}})));
+      if (photoData) {
+        setPhotos(photoData.map(p => ({
+          ...p, 
+          reactions: p.reactions && typeof p.reactions === 'object' ? p.reactions : {}
+        })));
+      }
       
       const { data: msgData } = await supabase.from("baby-registry").select("*").order("created_at", { ascending: false });
-      if (msgData) setMessages(msgData.map(m => ({...m, reactions: m.reactions || {}})));
+      if (msgData) {
+        setMessages(msgData.map(m => ({
+          ...m, 
+          reactions: m.reactions && typeof m.reactions === 'object' ? m.reactions : {}
+        })));
+      }
     };
     fetchData();
   }, []);
@@ -127,13 +137,17 @@ export default function BabyRegistry() {
     triggerThanks();
   }; 
 
+  // Gestione Reaction (MODIFICATO per risolvere il bug del refresh)
   const handleGenericReaction = async (id: number, emoji: string, type: 'photo' | 'msg') => {
     const items = type === 'photo' ? photos : messages;
     const item = items.find(i => i.id === id);
     if (!item) return;
 
-    // Cloniamo le reactions attuali del DB (assicurandoci che sia un oggetto)
-    const currentReactions = item.reactions ? { ...item.reactions } : {};
+    // Creiamo una copia pulita dell'oggetto reactions
+    const currentReactions = item.reactions && typeof item.reactions === 'object' 
+        ? { ...item.reactions } 
+        : {};
+
     const myCurrentReactions = type === 'photo' ? myPhotoReactions : myMsgReactions;
     const previousEmoji = myCurrentReactions[id];
     let updatedMyReactions = { ...myCurrentReactions };
@@ -158,11 +172,11 @@ export default function BabyRegistry() {
     
     if (!error) {
       if (type === 'photo') {
-        setPhotos(prev => prev.map(p => p.id === id ? { ...p, reactions: currentReactions } : p));
+        setPhotos(prev => prev.map(p => p.id === id ? { ...p, reactions: { ...currentReactions } } : p));
         setMyPhotoReactions(updatedMyReactions);
         localStorage.setItem("my_p_reac", JSON.stringify(updatedMyReactions));
       } else {
-        setMessages(prev => prev.map(m => m.id === id ? { ...m, reactions: currentReactions } : m));
+        setMessages(prev => prev.map(m => m.id === id ? { ...m, reactions: { ...currentReactions } } : m));
         setMyMsgReactions(updatedMyReactions);
         localStorage.setItem("my_m_reac", JSON.stringify(updatedMyReactions));
       }
@@ -288,7 +302,7 @@ export default function BabyRegistry() {
                                 ))}
                             </div>
                         </div> 
-                    ))} 
+                    ))}  
                   </div>
               )}
             </div> 
