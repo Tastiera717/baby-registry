@@ -216,4 +216,32 @@ export default function BabyRegistry() {
       )}
 
       {paymentOpen && ( 
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4" onClick={() => setPaymentOpen(false)}> 
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}> 
+            <h3 className="text-lg font-semibold mb-4 text-blue-800 text-center uppercase tracking-widest">🧸 Un pensiero per Michi</h3> 
+            <div className="space-y-3 text-sm"> 
+              <div className="p-4 bg-sky-50 rounded-2xl border border-blue-100">
+                <p className="font-bold text-blue-400 text-xs uppercase mb-1">IBAN</p>
+                <p className="font-mono">{IBAN}</p>
+              </div> 
+              <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100">
+                <p className="font-bold text-orange-400 text-xs uppercase mb-1">PayPal</p>
+                <p className="font-mono">{PAYPAL_EMAIL}</p>
+              </div> 
+            </div> 
+            <Button onClick={() => setPaymentOpen(false)} className="mt-5 w-full bg-blue-500 rounded-full py-3">Chiudi</Button> 
+          </div> 
+        </div> 
+      )} 
+
+      {selectedPhoto && (
+        <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999]" onClick={() => setSelectedPhoto(null)}>
+          <div className="relative w-full h-full flex items-center justify-center">
+            <img src={selectedPhoto} className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" alt="Full" onClick={(e) => e.stopPropagation()} />
+            <button className="absolute top-0 right-0 p-4 text-white text-6xl leading-none font-light outline-none" onClick={() => setSelectedPhoto(null)}>×</button>
+          </div>
+        </div>
+      )}
+    </div> 
+  ); 
+}
