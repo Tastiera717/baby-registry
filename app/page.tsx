@@ -39,17 +39,17 @@ export default function BabyRegistry() {
     localStorage.setItem("current_view", currentView);
   }, [currentView]);
 
-  const [myId] = useState(() => {
+  const [myId, setMyId] = useState("");
+  useEffect(() => {
     if (typeof window !== "undefined") {
       let id = localStorage.getItem("baby_user_id");
       if (!id) {
         id = crypto.randomUUID();
         localStorage.setItem("baby_user_id", id);
       }
-      return id;
+      setMyId(id);
     }
-    return "";
-  });
+  }, []);
 
   const [myPhotoReactions, setMyPhotoReactions] = useState<Record<number, string>>({});
   const [myMsgReactions, setMyMsgReactions] = useState<Record<number, string>>({});
@@ -303,7 +303,14 @@ export default function BabyRegistry() {
         </div>
       )}
 
-      {showThanks && <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/10 backdrop-blur-sm"><div className="bg-white p-6 rounded-2xl shadow-2xl animate-center-pop-mobile text-blue-800 font-bold">Grazie da Michi! 💙</div></div>}
+      {showThanks && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/10 backdrop-blur-sm">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl animate-center-pop-mobile text-blue-800 font-bold flex items-center gap-2">
+                <span>🧦 🧸</span>
+                <span>Grazie mille da Michi! 💙</span>
+            </div>
+        </div>
+      )}
 
       {paymentOpen && ( 
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] px-4" onClick={() => setPaymentOpen(false)}> 
