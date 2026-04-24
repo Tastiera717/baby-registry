@@ -193,20 +193,21 @@ export default function BabyRegistry() {
           <input id="galleryInput" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" /> 
           <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo per Michi</Button> 
           
-          <div className="grid grid-cols-2 gap-4 mt-4 max-h-[500px] overflow-y-auto pr-1"> 
+          {/* GRIGLIA A 3 COLONNE PER ANTEPRIME PIU' PICCOLE */}
+          <div className="grid grid-cols-3 gap-2 mt-4 max-h-[500px] overflow-y-auto pr-1"> 
             {photos.map((p) => ( 
-              <div key={p.id} className="relative flex flex-col bg-white rounded-2xl shadow-sm overflow-hidden border border-blue-50">
-                <div onClick={() => setSelectedPhoto(p.url)} className="w-full h-32 bg-gray-100">
+              <div key={p.id} className="relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border border-blue-50">
+                <div onClick={() => setSelectedPhoto(p.url)} className="w-full h-24 bg-gray-100">
                   <img src={p.url} className="w-full h-full object-cover" alt="Foto" />
                 </div>
                 {myPhotoIds.includes(p.id) && (
-                    <button onClick={(e) => deletePhoto(p.id, e)} className="absolute top-1 left-1 bg-red-500/80 text-white rounded-full p-1.5 z-10"><Trash2 size={12} /></button>
+                    <button onClick={(e) => deletePhoto(p.id, e)} className="absolute top-1 left-1 bg-red-500/80 text-white rounded-full p-1 z-10"><Trash2 size={10} /></button>
                 )}
-                <div className="flex justify-around items-center py-2 bg-sky-50/50">
+                <div className="flex justify-around items-center py-1 bg-sky-50/50">
                     {REACTIONS.map(emoji => (
-                        <button key={emoji} onClick={() => handleGenericReaction(p.id, emoji, 'photo')} className={`flex flex-col items-center transition-all ${myPhotoReactions[p.id] === emoji ? 'scale-125 bg-blue-100 rounded-lg px-1' : ''}`}>
-                            <span className="text-base">{emoji}</span>
-                            <span className="text-[10px] font-sans font-bold">{p.reactions?.[emoji] || 0}</span>
+                        <button key={emoji} onClick={() => handleGenericReaction(p.id, emoji, 'photo')} className={`flex flex-col items-center transition-all ${myPhotoReactions[p.id] === emoji ? 'scale-110 bg-blue-100 rounded-md px-0.5' : ''}`}>
+                            <span className="text-xs">{emoji}</span>
+                            <span className="text-[8px] font-sans font-bold">{p.reactions?.[emoji] || 0}</span>
                         </button>
                     ))}
                 </div>
@@ -269,7 +270,16 @@ export default function BabyRegistry() {
         </div> 
       )} 
 
-      {showThanks && <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none"><div className="bg-white p-4 rounded-2xl shadow-xl animate-center-pop-mobile text-blue-800 font-bold">Grazie mille da Michi! 💙</div></div>}
+      {/* POPUP RINGRAZIAMENTO CON ICONE RIPRISTINATE */}
+      {showThanks && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none px-6">
+          <div className="bg-white p-4 rounded-2xl shadow-xl animate-center-pop-mobile text-blue-800 font-bold flex items-center gap-2">
+            <span>🧦 🧸</span>
+            <span>Grazie mille da Michi! 💙</span>
+          </div>
+        </div>
+      )}
+
       {selectedPhoto && <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999]" onClick={() => setSelectedPhoto(null)}><img src={selectedPhoto} className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" alt="Zoom" /></div>}
     </div> 
   ); 
