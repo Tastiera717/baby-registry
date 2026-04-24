@@ -25,7 +25,7 @@ export default function BabyRegistry() {
   const [showThanks, setShowThanks] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   
-  // Stati per la cancellazione "carina"
+  // Stato per il modale di cancellazione personalizzato
   const [deleteConfirm, setDeleteConfirm] = useState<{id: number, type: 'photo' | 'msg'} | null>(null);
 
   const [myMessageIds, setMyMessageIds] = useState<number[]>([]);
@@ -34,13 +34,10 @@ export default function BabyRegistry() {
   const [myMsgReactions, setMyMsgReactions] = useState<Record<number, string>>({});
 
   useEffect(() => {
-    // Caricamento persistente dal browser
     const savedMsgIds = localStorage.getItem("my_messages");
     if (savedMsgIds) setMyMessageIds(JSON.parse(savedMsgIds));
-    
     const savedPhotoIds = localStorage.getItem("my_photos");
     if (savedPhotoIds) setMyPhotoIds(JSON.parse(savedPhotoIds));
-
     const savedPReac = localStorage.getItem("my_p_reac");
     if (savedPReac) setMyPhotoReactions(JSON.parse(savedPReac));
     const savedMReac = localStorage.getItem("my_m_reac");
@@ -83,7 +80,7 @@ export default function BabyRegistry() {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { 
     const files = Array.from(e.target.files || []); 
     const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1280, useWebWorker: true };
-    let newIds = [...myPhotoIds];
+    let currentIds = [...myPhotoIds];
 
     for (const file of files) { 
       try {
@@ -97,13 +94,13 @@ export default function BabyRegistry() {
           const { data: newPhoto } = await supabase.from("Photos").insert([{ url: urlData.publicUrl, reactions: {} }]).select().single();
           if (newPhoto) {
               setPhotos((prev) => [newPhoto, ...prev]);
-              newIds.push(newPhoto.id);
+              currentIds.push(newPhoto.id);
           }
         } 
       } catch (err) { console.error(err); }
     }
-    setMyPhotoIds(newIds);
-    localStorage.setItem("my_photos", JSON.stringify(newIds));
+    setMyPhotoIds(currentIds);
+    localStorage.setItem("my_photos", JSON.stringify(currentIds));
     triggerThanks();
   }; 
 
@@ -175,23 +172,21 @@ export default function BabyRegistry() {
       <div className="fixed inset-0 w-full h-full -z-20 bg-no-repeat bg-top pointer-events-none" style={{ backgroundImage: "url('/bg-mobile.png')", backgroundSize: "145%", backgroundColor: "#f0f9ff", marginTop: "-1px" }} /> 
       <div className="fixed inset-0 w-full h-full bg-white/60 -z-10 pointer-events-none" /> 
 
-      {/* Controllo Musica */}
       <div className="absolute top-4 right-4 z-50"> 
         <Button onClick={() => setMusicOn((v) => !v)} className={BTN + " !w-14 !p-0"}>{musicOn ? "🔊" : "🔇"}</Button> 
       </div> 
       {musicOn && <iframe title="music" src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0`} allow="autoplay" className="hidden" />} 
 
-      {/* Header */}
       <div className="relative z-10 text-center mt-16 mb-6 px-4"> 
         <h1 className="text-3xl font-bold">Benvenuto</h1> 
         <h2 className="text-5xl font-extrabold mt-1 text-blue-900">Michele</h2> 
         <div className="mt-6 space-y-4 text-base leading-relaxed max-w-sm mx-auto text-blue-800">
-          <p>Abbiamo creato questo spazio per raccogliere i vostri <b>messaggi</b> e le <b>foto ricordo</b> più belle.</p>
+          <p>Abbiamo creato questo spazio per raccogliere i vostri <b>messaggi</b> e le <b>foto ricordo</b> più belle, così da iniziare a scrivere insieme il primo capitolo della vita di Michi.</p>
+          <p>Sappiamo che body e peluche sono adorabili… ma pannolini e notti insonni lo sono un po’ meno 😄 Se desiderate partecipare a questa avventura con un piccolo pensiero, ve ne saremo molto grati e ci aiuterete ad affrontare al meglio ogni nuova sfida! 🦊</p>
         </div>
         <p className="mt-4 text-lg font-semibold border-t border-blue-200 pt-4 inline-block px-8">9 ottobre 2026</p> 
       </div> 
 
-      {/* Main Content */}
       <div className="w-full max-w-md space-y-5 z-10 relative pb-20"> 
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
@@ -201,11 +196,10 @@ export default function BabyRegistry() {
           <Button onClick={() => setPaymentOpen(true)} className={`mt-2 ${BTN}`}>Un pensiero per Michi 🧸</Button> 
         </div> 
 
-        {/* Gallery */}
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
           <input id="galleryInput" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" /> 
-          <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo</Button> 
+          <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo per Michi</Button> 
           <div className="grid grid-cols-3 gap-2 mt-4 max-h-[500px] overflow-y-auto pr-1"> 
             {photos.map((p) => ( 
               <div key={p.id} className="relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border border-sky-200">
@@ -228,7 +222,6 @@ export default function BabyRegistry() {
           </div> 
         </div> 
 
-        {/* Messages */}
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
           <div className="space-y-4 max-h-80 overflow-y-auto pr-1"> 
@@ -254,18 +247,18 @@ export default function BabyRegistry() {
         </div> 
       </div> 
 
-      {/* MODALE DI CANCELLAZIONE CARINO */}
+      {/* MODALE DI CANCELLAZIONE PERSONALIZZATO */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
-            <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center">
+            <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center border border-blue-50">
                 <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
                     <AlertCircle size={32} />
                 </div>
-                <h3 className="text-xl font-bold text-blue-900 mb-2">Sei sicuro?</h3>
-                <p className="text-sm text-blue-800/70 mb-6">Questa azione non può essere annullata. Vuoi davvero eliminare questo {deleteConfirm.type === 'photo' ? 'ricordo' : 'messaggio'}?</p>
+                <h3 className="text-xl font-bold text-blue-900 mb-2 font-sans">Sei sicuro?</h3>
+                <p className="text-sm text-blue-800/70 mb-6 font-sans">Questa azione non può essere annullata. Vuoi davvero eliminare questo {deleteConfirm.type === 'photo' ? 'ricordo' : 'messaggio'}?</p>
                 <div className="flex gap-3">
-                    <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3 rounded-full bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition-colors">Annulla</button>
-                    <button onClick={confirmDeletion} className="flex-1 py-3 rounded-full bg-red-500 text-white font-bold hover:bg-red-600 shadow-md transition-colors">Elimina</button>
+                    <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3 rounded-full bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition-colors font-sans text-sm">Annulla</button>
+                    <button onClick={confirmDeletion} className="flex-1 py-3 rounded-full bg-red-500 text-white font-bold hover:bg-red-600 shadow-md transition-colors font-sans text-sm">Elimina</button>
                 </div>
             </div>
         </div>
@@ -301,8 +294,7 @@ export default function BabyRegistry() {
         </div> 
       )} 
 
-      {/* ZOOM FOTO */}
-      {selectedPhoto && <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999]" onClick={() => setSelectedPhoto(null)}><img src={selectedPhoto} className="max-w-full max-h-[90vh] object-contain rounded-lg" alt="Zoom" /></div>}
+      {selectedPhoto && <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999]" onClick={() => setSelectedPhoto(null)}><img src={selectedPhoto} className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" alt="Zoom" /></div>}
     </div> 
   ); 
 }
