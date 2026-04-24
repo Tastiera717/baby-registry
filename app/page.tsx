@@ -17,7 +17,7 @@ const REACTIONS = ["❤️", "🧸", "✨", "👶"];
 
 export default function BabyRegistry() { 
   const [message, setMessage] = useState(""); 
-  const [signature, setSignature] = useState(""); // Nuovo stato per la firma
+  const [signature, setSignature] = useState(""); 
   const [messages, setMessages] = useState<{id: number, text: string, reactions?: any}[]>([]); 
   const [photos, setPhotos] = useState<{url: string, id: number, reactions?: any}[]>([]); 
   const [paymentOpen, setPaymentOpen] = useState(false); 
@@ -169,7 +169,6 @@ export default function BabyRegistry() {
 
       {musicOn && <iframe title="music" src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0`} allow="autoplay" className="hidden" />} 
 
-      {/* TESTI ORIGINALI RIPRISTINATI */}
       <div className="relative z-10 text-center mt-16 mb-6 px-4"> 
         <h1 className="text-3xl font-bold">Benvenuto</h1> 
         <h2 className="text-5xl font-extrabold mt-1 text-blue-900">Michele</h2> 
@@ -192,7 +191,6 @@ export default function BabyRegistry() {
         <div className={CARD}> 
           <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
           <input id="galleryInput" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" /> 
-          {/* BOTTONE ORIGINALE RIPRISTINATO */}
           <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo per Michi</Button> 
           
           <div className="grid grid-cols-2 gap-4 mt-4 max-h-[500px] overflow-y-auto pr-1"> 
@@ -228,7 +226,6 @@ export default function BabyRegistry() {
                         <button onClick={() => deleteMessage(m.id)} className="text-red-300"><Trash2 size={14} /></button>
                     )}
                   </div>
-                  {/* BARRA REACTION MESSAGGI */}
                   <div className="flex gap-4 border-t border-gray-50 pt-2">
                     {REACTIONS.map(emoji => (
                       <button key={emoji} onClick={() => handleGenericReaction(m.id, emoji, 'msg')} className={`flex items-center gap-1 px-2 py-0.5 rounded-full transition-all ${myMsgReactions[m.id] === emoji ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
@@ -245,4 +242,35 @@ export default function BabyRegistry() {
 
       {paymentOpen && ( 
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] px-4" onClick={() => setPaymentOpen(false)}> 
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-center-
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-center-pop-mobile" onClick={(e) => e.stopPropagation()}> 
+            <h3 className="text-lg font-semibold mb-4 text-blue-800 text-center uppercase tracking-widest">🧸 Un pensiero per Michi</h3> 
+            <div className="space-y-3"> 
+              <div className="p-4 bg-sky-50 rounded-2xl border border-blue-100 flex justify-between items-center">
+                <div className="overflow-hidden">
+                    <p className="font-bold text-blue-400 text-[10px] uppercase mb-1">IBAN</p>
+                    <p className="font-mono text-xs truncate">{IBAN}</p>
+                </div>
+                <button onClick={() => copyToClipboard(IBAN, 'iban')} className="ml-2 p-2 bg-white rounded-xl shadow-sm text-blue-500">
+                    {copiedField === 'iban' ? <Check size={18} /> : <Copy size={18} />}
+                </button>
+              </div> 
+              <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100 flex justify-between items-center">
+                <div>
+                    <p className="font-bold text-orange-400 text-[10px] uppercase mb-1">PayPal</p>
+                    <p className="font-mono text-xs">{PAYPAL_EMAIL}</p>
+                </div>
+                <button onClick={() => copyToClipboard(PAYPAL_EMAIL, 'paypal')} className="ml-2 p-2 bg-white rounded-xl shadow-sm text-orange-500">
+                    {copiedField === 'paypal' ? <Check size={18} /> : <Copy size={18} />}
+                </button>
+              </div> 
+            </div> 
+            <Button onClick={() => setPaymentOpen(false)} className="mt-5 w-full bg-blue-500 rounded-full py-3">Chiudi</Button> 
+          </div> 
+        </div> 
+      )} 
+
+      {showThanks && <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none"><div className="bg-white p-4 rounded-2xl shadow-xl animate-center-pop-mobile text-blue-800 font-bold">Grazie mille da Michi! 💙</div></div>}
+      {selectedPhoto && <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999]" onClick={() => setSelectedPhoto(null)}><img src={selectedPhoto} className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" alt="Zoom" /></div>}
+    </div> 
+  ); 
+}
