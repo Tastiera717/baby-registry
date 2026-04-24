@@ -193,7 +193,6 @@ export default function BabyRegistry() {
           <input id="galleryInput" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" /> 
           <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo per Michi</Button> 
           
-          {/* GRIGLIA A 3 COLONNE PER ANTEPRIME PIU' PICCOLE */}
           <div className="grid grid-cols-3 gap-2 mt-4 max-h-[500px] overflow-y-auto pr-1"> 
             {photos.map((p) => ( 
               <div key={p.id} className="relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border border-blue-50">
@@ -270,12 +269,12 @@ export default function BabyRegistry() {
         </div> 
       )} 
 
-      {/* POPUP RINGRAZIAMENTO CON ICONE RIPRISTINATE */}
+      {/* POPUP RINGRAZIAMENTO CON SFONDO SFOCATO (Backdrop Blur) */}
       {showThanks && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none px-6">
-          <div className="bg-white p-4 rounded-2xl shadow-xl animate-center-pop-mobile text-blue-800 font-bold flex items-center gap-2">
-            <span>🧦 🧸</span>
-            <span>Grazie mille da Michi! 💙</span>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/10 backdrop-blur-sm px-6">
+          <div className="bg-white p-6 rounded-2xl shadow-2xl animate-center-pop-mobile text-blue-800 font-bold flex items-center gap-3">
+            <span className="text-xl">🧦 🧸</span>
+            <span className="text-lg">Grazie mille da Michi! 💙</span>
           </div>
         </div>
       )}
