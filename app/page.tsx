@@ -41,7 +41,6 @@ export default function BabyRegistry() {
   const [myPhotoReactions, setMyPhotoReactions] = useState<Record<number, string>>({});
   const [myMsgReactions, setMyMsgReactions] = useState<Record<number, string>>({});
 
-  // Inizializzazione dati dal localStorage
   useEffect(() => {
     const savedMsgs = localStorage.getItem("my_messages");
     if (savedMsgs) setMyMessageIds(JSON.parse(savedMsgs));
@@ -56,7 +55,6 @@ export default function BabyRegistry() {
     if (savedMReac) setMyMsgReactions(JSON.parse(savedMReac));
   }, []);
 
-  // Fetch dei dati dal DB con pulizia oggetti reactions
   useEffect(() => {
     const fetchData = async () => {
       const { data: photoData } = await supabase.from("Photos").select("*").order("created_at", { ascending: false });
@@ -137,7 +135,6 @@ export default function BabyRegistry() {
     triggerThanks();
   }; 
 
-  // Gestione Reaction con update forzato e gestione tipi
   const handleGenericReaction = async (id: number, emoji: string, type: 'photo' | 'msg') => {
     const items = type === 'photo' ? photos : messages;
     const item = items.find(i => i.id === id);
@@ -163,8 +160,6 @@ export default function BabyRegistry() {
     }
 
     const table = type === 'photo' ? "Photos" : "baby-registry";
-    
-    // Update su Supabase
     const { error } = await supabase.from(table).update({ reactions: currentReactions }).eq('id', id);
     
     if (!error) {
@@ -270,39 +265,50 @@ export default function BabyRegistry() {
 
       <div className="w-full max-w-md space-y-5 z-10 relative pb-20 px-2"> 
         
+        {/* BOX 1: MESSAGGI (Inserimento + Visualizzazione) */}
         {(currentView === 'all' || currentView === 'messages') && (
             <div className={CARD}> 
-              <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
+              <h2 className={`text-lg font-semibold ${PRIMARY}`}>💌 Messaggi</h2> 
               <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi un messaggio" className="mt-2" /> 
               <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Tua firma (opzionale)" className="mt-2 text-sm italic" /> 
               <Button onClick={addMessage} className={`mt-3 ${BTN}`}>Invia 💙</Button> 
-              {currentView === 'all' && <Button onClick={() => setPaymentOpen(true)} className={`mt-2 ${BTN}`}>Un pensiero per Michi 🧸</Button>}
               
-              {currentView === 'messages' && (
-                  <div className="space-y-4 mt-6 border-t border-blue-100 pt-4 max-h-[60vh] overflow-y-auto"> 
-                    {messages.map((m) => (  
-                        <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
-                            <div className="flex justify-between items-start gap-2 mb-2">
-                                <span className="text-sm whitespace-pre-wrap">{m.text}</span>
-                                {myMessageIds.includes(m.id) && (
-                                    <button onClick={() => setDeleteConfirm({id: m.id, type: 'msg'})} className="text-red-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
-                                )}
-                            </div>
-                            <div className="flex gap-4 border-t border-gray-50 pt-2">
-                                {REACTIONS.map(emoji => (
-                                <button key={emoji} onClick={() => handleGenericReaction(m.id, emoji, 'msg')} className={`flex items-center gap-1 px-2 py-0.5 rounded-full transition-all ${myMsgReactions[m.id] === emoji ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
-                                    <span className="text-xs">{emoji}</span>
-                                    <span className="text-[10px] font-sans font-bold">{m.reactions?.[emoji] || 0}</span>
-                                </button>
-                                ))}
-                            </div>
-                        </div> 
-                    ))}  
-                  </div>
+              <div className="space-y-4 mt-6 border-t border-blue-100 pt-4 max-h-[60vh] overflow-y-auto"> 
+                {messages.map((m) => (  
+                    <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
+                        <div className="flex justify-between items-start gap-2 mb-2">
+                            <span className="text-sm whitespace-pre-wrap">{m.text}</span>
+                            {myMessageIds.includes(m.id) && (
+                                <button onClick={() => setDeleteConfirm({id: m.id, type: 'msg'})} className="text-red-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                            )}
+                        </div>
+                        <div className="flex gap-4 border-t border-gray-50 pt-2">
+                            {REACTIONS.map(emoji => (
+                            <button key={emoji} onClick={() => handleGenericReaction(m.id, emoji, 'msg')} className={`flex items-center gap-1 px-2 py-0.5 rounded-full transition-all ${myMsgReactions[m.id] === emoji ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
+                                <span className="text-xs">{emoji}</span>
+                                <span className="text-[10px] font-sans font-bold">{m.reactions?.[emoji] || 0}</span>
+                            </button>
+                            ))}
+                        </div>
+                    </div> 
+                ))}  
+              </div>
+              {currentView === 'all' && messages.length > 5 && (
+                  <Button variant="ghost" onClick={() => setCurrentView('messages')} className="w-full mt-2 text-blue-400 text-xs uppercase font-bold">Vedi tutti i messaggi</Button>
               )}
             </div> 
         )}
 
+        {/* BOX 2: PENSIERO PER MICHI */}
+        {currentView === 'all' && (
+            <div className={CARD}> 
+              <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
+              <p className="mt-2 text-sm text-blue-800/80 italic">Se desideri partecipare con un pensiero clicca sotto:</p>
+              <Button onClick={() => setPaymentOpen(true)} className={`mt-3 ${BTN}`}>Un pensiero per Michi 🧸</Button>
+            </div> 
+        )}
+
+        {/* BOX 3: RICORDI */}
         {(currentView === 'all' || currentView === 'photos') && (
             <div className={CARD}> 
                 <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
@@ -333,35 +339,9 @@ export default function BabyRegistry() {
                 )}
             </div> 
         )}
-
-        {currentView === 'all' && (
-            <div className={CARD}> 
-                <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
-                <div className="space-y-4 max-h-80 overflow-y-auto pr-1"> 
-                    {messages.map((m) => (  
-                    <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
-                        <div className="flex justify-between items-start gap-2 mb-2">
-                            <span className="text-sm whitespace-pre-wrap">{m.text}</span>
-                            {myMessageIds.includes(m.id) && (
-                                <button onClick={() => setDeleteConfirm({id: m.id, type: 'msg'})} className="text-red-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
-                            )}
-                        </div>
-                        <div className="flex gap-4 border-t border-gray-50 pt-2">
-                            {REACTIONS.map(emoji => (
-                            <button key={emoji} onClick={() => handleGenericReaction(m.id, emoji, 'msg')} className={`flex items-center gap-1 px-2 py-0.5 rounded-full transition-all ${myMsgReactions[m.id] === emoji ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
-                                <span className="text-xs">{emoji}</span>
-                                <span className="text-[10px] font-sans font-bold">{m.reactions?.[emoji] || 0}</span>
-                            </button>
-                            ))}
-                        </div>
-                    </div> 
-                    ))} 
-                </div> 
-                <Button variant="ghost" onClick={() => setCurrentView('messages')} className="w-full mt-2 text-blue-400 text-xs uppercase font-bold">Vedi tutti i messaggi</Button>
-            </div> 
-        )}
       </div> 
 
+      {/* MODALI (Confirm Delete, Thanks, Payment, Photo Zoom) */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center border border-blue-50">
