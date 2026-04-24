@@ -232,7 +232,7 @@ export default function BabyRegistry() {
                       <Camera size={22} /> <span className="font-sans font-bold">Tutte le Foto</span>
                   </button>
                   <button onClick={() => { setCurrentView('messages'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-colors ${currentView === 'messages' ? 'bg-blue-500 text-white shadow-lg' : 'bg-sky-50 text-blue-800'}`}>
-                      <MessageSquare size={22} /> <span className="font-sans font-bold">I vostri messaggi</span>
+                      <MessageSquare size={22} /> <span className="font-sans font-bold">Messaggi</span>
                   </button>
               </nav>
           </div>
@@ -253,7 +253,7 @@ export default function BabyRegistry() {
               </>
           ) : (
               <h2 className="text-4xl font-extrabold text-blue-900">
-                  {currentView === 'photos' ? '📸 Foto Ricordo' : '💌 I vostri messaggi'}
+                  {currentView === 'photos' ? '📸 Foto Ricordo' : '💌 Messaggi'}
               </h2>
           )}
       </div>
@@ -329,7 +329,7 @@ export default function BabyRegistry() {
         {/* LISTA MESSAGGI COMPATTA IN HOME */}
         {currentView === 'all' && (
             <div className={CARD}> 
-                <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 I vostri messaggi</h2> 
+                <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
                 <div className="space-y-4 max-h-80 overflow-y-auto pr-1"> 
                     {messages.map((m) => (  
                     <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
