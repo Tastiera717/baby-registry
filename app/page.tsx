@@ -237,7 +237,7 @@ export default function BabyRegistry() {
                       <Camera size={22} /> <span className="font-sans font-bold">Tutte le Foto</span>
                   </button>
                   <button onClick={() => { setCurrentView('messages'); setIsMenuOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-colors ${currentView === 'messages' ? 'bg-blue-500 text-white shadow-lg' : 'bg-sky-50 text-blue-800'}`}>
-                      <MessageSquare size={22} /> <span className="font-sans font-bold">Tutti i Messaggi</span>
+                      <MessageSquare size={22} /> <span className="font-sans font-bold">Messaggi</span>
                   </button>
               </nav>
           </div>
@@ -265,7 +265,7 @@ export default function BabyRegistry() {
 
       <div className="w-full max-w-md space-y-5 z-10 relative pb-20 px-2"> 
         
-        {/* BOX 1: MESSAGGI (Inserimento + Visualizzazione) */}
+        {/* BOX 1: MESSAGGI */}
         {(currentView === 'all' || currentView === 'messages') && (
             <div className={CARD}> 
               <h2 className={`text-lg font-semibold ${PRIMARY}`}>💌 Messaggi</h2> 
@@ -274,7 +274,7 @@ export default function BabyRegistry() {
               <Button onClick={addMessage} className={`mt-3 ${BTN}`}>Invia 💙</Button> 
               
               <div className="space-y-4 mt-6 border-t border-blue-100 pt-4 max-h-[60vh] overflow-y-auto"> 
-                {messages.map((m) => (  
+                {messages.slice(0, currentView === 'all' ? 5 : undefined).map((m) => (  
                     <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
                         <div className="flex justify-between items-start gap-2 mb-2">
                             <span className="text-sm whitespace-pre-wrap">{m.text}</span>
@@ -293,8 +293,9 @@ export default function BabyRegistry() {
                     </div> 
                 ))}  
               </div>
-              {currentView === 'all' && messages.length > 5 && (
-                  <Button variant="ghost" onClick={() => setCurrentView('messages')} className="w-full mt-2 text-blue-400 text-xs uppercase font-bold">Vedi tutti i messaggi</Button>
+              {/* PULSANTE VEDI TUTTI I MESSAGGI SEMPRE PRESENTE IN HOME */}
+              {currentView === 'all' && (
+                  <Button variant="ghost" onClick={() => setCurrentView('messages')} className="w-full mt-4 text-blue-400 text-xs uppercase font-bold">Vedi tutti i messaggi</Button>
               )}
             </div> 
         )}
@@ -303,7 +304,7 @@ export default function BabyRegistry() {
         {currentView === 'all' && (
             <div className={CARD}> 
               <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
-              <p className="mt-2 text-sm text-blue-800/80 italic">Se desideri partecipare con un pensiero clicca sotto</p>
+              <p className="mt-2 text-sm text-blue-800/80 italic">Se desideri partecipare con un pensiero clicca sotto:</p>
               <Button onClick={() => setPaymentOpen(true)} className={`mt-3 ${BTN}`}>Un pensiero per Michi 🧸</Button>
             </div> 
         )}
@@ -313,9 +314,9 @@ export default function BabyRegistry() {
             <div className={CARD}> 
                 <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
                 <input id="galleryInput" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" /> 
-                <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo per Michi</Button> 
+                <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo per Michi✨</Button> 
                 <div className={`grid ${currentView === 'photos' ? 'grid-cols-2' : 'grid-cols-3'} gap-2 mt-4 overflow-y-auto pr-1`}> 
-                    {photos.map((p) => ( 
+                    {photos.slice(0, currentView === 'all' ? 6 : undefined).map((p) => ( 
                     <div key={p.id} className="relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border border-sky-200">
                         <div onClick={() => setSelectedPhoto(p.url)} className={`w-full ${currentView === 'photos' ? 'h-40' : 'h-24'} bg-gray-100`}>
                             <img src={p.url} className="w-full h-full object-cover" alt="Foto" />
@@ -341,7 +342,7 @@ export default function BabyRegistry() {
         )}
       </div> 
 
-      {/* MODALI (Confirm Delete, Thanks, Payment, Photo Zoom) */}
+      {/* MODALI RIMANENTI */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center border border-blue-50">
