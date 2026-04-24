@@ -25,10 +25,8 @@ export default function BabyRegistry() {
   const [showThanks, setShowThanks] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   
-  // Nuovi stati per Menu e Navigazione
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'all' | 'photos' | 'messages'>('all');
-
   const [deleteConfirm, setDeleteConfirm] = useState<{id: number, type: 'photo' | 'msg'} | null>(null);
 
   const [myMessageIds, setMyMessageIds] = useState<number[]>(() => {
@@ -124,6 +122,7 @@ export default function BabyRegistry() {
     const items = type === 'photo' ? photos : messages;
     const item = items.find(i => i.id === id);
     if (!item) return;
+    
     const currentReactions = { ...(item.reactions || {}) };
     const myCurrentReactions = type === 'photo' ? myPhotoReactions : myMsgReactions;
     const previousEmoji = myCurrentReactions[id];
@@ -185,15 +184,12 @@ export default function BabyRegistry() {
         @keyframes centerPopMobile { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         .animate-center-pop-mobile { animation: centerPopMobile 0.3s ease-out; }
         .top-bar-fill { position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 44px); background-color: #f0f9ff; z-index: 100; }
-        .side-menu-enter { transform: translateX(-100%); transition: transform 0.3s ease-out; }
-        .side-menu-open { transform: translateX(0); }
       `}</style> 
 
       <div className="top-bar-fill" />
       <div className="fixed inset-0 w-full h-full -z-20 bg-no-repeat bg-top pointer-events-none" style={{ backgroundImage: "url('/bg-mobile.png')", backgroundSize: "145%", backgroundColor: "#f0f9ff", marginTop: "-1px" }} /> 
       <div className="fixed inset-0 w-full h-full bg-white/60 -z-10 pointer-events-none" /> 
 
-      {/* HEADER CON MENU E MUSICA */}
       <div className="fixed top-4 left-4 right-4 z-[100] flex justify-between items-center">
         <Button onClick={() => setIsMenuOpen(true)} className="bg-white/80 backdrop-blur-md border border-blue-100 shadow-md !w-12 !h-12 !p-0 rounded-2xl text-blue-600">
             <Menu size={24} />
@@ -203,7 +199,7 @@ export default function BabyRegistry() {
         </Button>
       </div>
 
-      {/* HAMBURGER MENU LATERALE */}
+      {/* MENU LATERALE */}
       <div className={`fixed inset-0 z-[200] transition-opacity duration-300 ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
           <div className="absolute inset-0 bg-blue-900/20 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
           <div className={`absolute top-0 left-0 h-full w-72 bg-white shadow-2xl transition-transform duration-300 flex flex-col p-6 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -222,49 +218,62 @@ export default function BabyRegistry() {
                       <MessageSquare size={22} /> <span className="font-sans font-bold">Tutti i Messaggi</span>
                   </button>
               </nav>
-              <div className="text-center text-[10px] text-blue-300 font-sans uppercase tracking-widest pb-4">
-                  Per il piccolo Michi 🧸
-              </div>
           </div>
       </div>
 
       {musicOn && <iframe title="music" src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0`} allow="autoplay" className="hidden" />} 
 
-      {/* HEADER TITOLO (Visibile solo in Home) */}
-      {currentView === 'all' && (
-        <div className="relative z-10 text-center mt-20 mb-6 px-4"> 
-            <h1 className="text-3xl font-bold">Benvenuto</h1> 
-            <h2 className="text-5xl font-extrabold mt-1 text-blue-900">Michele</h2> 
-            <div className="mt-6 space-y-4 text-base leading-relaxed max-w-sm mx-auto text-blue-800">
-                <p>Abbiamo creato questo spazio per raccogliere i vostri <b>messaggi</b> e le <b>foto ricordo</b> più belle, così da iniziare a scrivere insieme il primo capitolo della vita di Michi.</p>
-                <p>Sappiamo che body e peluche sono adorabili… ma pannolini e notti insonni lo sono un po’ meno 😄 Se desiderate partecipare a questa avventura con un piccolo pensiero, ve ne saremo molto grati e ci aiuterete ad affrontare al meglio ogni nuova sfida! 🦊</p>
-            </div>
-            <p className="mt-4 text-lg font-semibold border-t border-blue-200 pt-4 inline-block px-8">9 ottobre 2026</p> 
-        </div>
-      )}
-
-      {/* TITOLO SEZIONE (Visibile in viste specifiche) */}
-      {currentView !== 'all' && (
-          <div className="mt-20 mb-6 text-center z-10">
+      {/* HEADER TITOLO */}
+      <div className="relative z-10 text-center mt-20 mb-6 px-4"> 
+          {currentView === 'all' ? (
+              <>
+                <h1 className="text-3xl font-bold">Benvenuto</h1> 
+                <h2 className="text-5xl font-extrabold mt-1 text-blue-900">Michele</h2> 
+              </>
+          ) : (
               <h2 className="text-4xl font-extrabold text-blue-900">
                   {currentView === 'photos' ? '📸 Foto Ricordo' : '💌 Messaggi Dolci'}
               </h2>
-              <button onClick={() => setCurrentView('all')} className="text-blue-500 font-sans text-sm mt-2 underline">Torna alla Home</button>
-          </div>
-      )}
+          )}
+      </div>
 
-      <div className="w-full max-w-md space-y-5 z-10 relative pb-20"> 
+      <div className="w-full max-w-md space-y-5 z-10 relative pb-20 px-2"> 
         
-        {/* CARD INPUT (Sempre visibile per permettere l'invio rapido) */}
-        <div className={CARD}> 
-          <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
-          <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi un messaggio" className="mt-2" /> 
-          <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Tua firma (opzionale)" className="mt-2 text-sm italic" /> 
-          <Button onClick={addMessage} className={`mt-3 ${BTN}`}>Invia 💙</Button> 
-          <Button onClick={() => setPaymentOpen(true)} className={`mt-2 ${BTN}`}>Un pensiero per Michi 🧸</Button> 
-        </div> 
+        {/* BOX MESSAGGI (Solo in Home o Sezione Messaggi) */}
+        {(currentView === 'all' || currentView === 'messages') && (
+            <div className={CARD}> 
+              <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
+              <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi un messaggio" className="mt-2" /> 
+              <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Tua firma (opzionale)" className="mt-2 text-sm italic" /> 
+              <Button onClick={addMessage} className={`mt-3 ${BTN}`}>Invia 💙</Button> 
+              {currentView === 'all' && <Button onClick={() => setPaymentOpen(true)} className={`mt-2 ${BTN}`}>Un pensiero per Michi 🧸</Button>}
+              
+              {currentView === 'messages' && (
+                  <div className="space-y-4 mt-6 border-t border-blue-100 pt-4 max-h-[60vh] overflow-y-auto"> 
+                    {messages.map((m) => (  
+                        <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
+                            <div className="flex justify-between items-start gap-2 mb-2">
+                                <span className="text-sm whitespace-pre-wrap">{m.text}</span>
+                                {myMessageIds.includes(m.id) && (
+                                    <button onClick={() => setDeleteConfirm({id: m.id, type: 'msg'})} className="text-red-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                                )}
+                            </div>
+                            <div className="flex gap-4 border-t border-gray-50 pt-2">
+                                {REACTIONS.map(emoji => (
+                                <button key={emoji} onClick={() => handleGenericReaction(m.id, emoji, 'msg')} className={`flex items-center gap-1 px-2 py-0.5 rounded-full transition-all ${myMsgReactions[m.id] === emoji ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
+                                    <span className="text-xs">{emoji}</span>
+                                    <span className="text-[10px] font-sans font-bold">{m.reactions?.[emoji] || 0}</span>
+                                </button>
+                                ))}
+                            </div>
+                        </div> 
+                    ))} 
+                  </div>
+              )}
+            </div> 
+        )}
 
-        {/* SEZIONE FOTO */}
+        {/* BOX FOTO (Solo in Home o Sezione Foto) */}
         {(currentView === 'all' || currentView === 'photos') && (
             <div className={CARD}> 
                 <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
@@ -293,11 +302,11 @@ export default function BabyRegistry() {
             </div> 
         )}
 
-        {/* SEZIONE MESSAGGI */}
-        {(currentView === 'all' || currentView === 'messages') && (
+        {/* LISTA MESSAGGI (Solo in Home, compatta) */}
+        {currentView === 'all' && (
             <div className={CARD}> 
-                <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi</h2> 
-                <div className={`space-y-4 ${currentView === 'all' ? 'max-h-80' : ''} overflow-y-auto pr-1`}> 
+                <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>💌 Messaggi recenti</h2> 
+                <div className="space-y-4 max-h-80 overflow-y-auto pr-1"> 
                     {messages.map((m) => (  
                     <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
                         <div className="flex justify-between items-start gap-2 mb-2">
@@ -317,17 +326,18 @@ export default function BabyRegistry() {
                     </div> 
                     ))} 
                 </div> 
+                <Button variant="ghost" onClick={() => setCurrentView('messages')} className="w-full mt-2 text-blue-400 text-xs uppercase font-bold">Vedi tutti i messaggi</Button>
             </div> 
         )}
       </div> 
 
-      {/* MODALI (Confirm, Payment, Thanks, Zoom) - Invariati per logica ma mantenuti per integrità */}
+      {/* MODALI RIMASTI INVARIATI */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center border border-blue-50">
                 <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500"><AlertCircle size={32} /></div>
                 <h3 className="text-xl font-bold text-blue-900 mb-2 font-sans">Sei sicuro?</h3>
-                <p className="text-sm text-blue-800/70 mb-6 font-sans">Questa azione non può essere annullata. Vuoi davvero eliminare questo {deleteConfirm.type === 'photo' ? 'ricordo' : 'messaggio'}?</p>
+                <p className="text-sm text-blue-800/70 mb-6 font-sans">Vuoi eliminare questo {deleteConfirm.type === 'photo' ? 'ricordo' : 'messaggio'}?</p>
                 <div className="flex gap-3">
                     <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3 rounded-full bg-gray-100 text-gray-600 font-bold font-sans text-sm">Annulla</button>
                     <button onClick={confirmDeletion} className="flex-1 py-3 rounded-full bg-red-500 text-white font-bold shadow-md font-sans text-sm">Elimina</button>
@@ -339,7 +349,7 @@ export default function BabyRegistry() {
       {showThanks && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/10 backdrop-blur-sm px-6">
           <div className="bg-white p-6 rounded-2xl shadow-2xl animate-center-pop-mobile text-blue-800 font-bold flex items-center gap-3">
-            <span className="text-xl">🧦 🧸</span> <span className="text-lg">Grazie mille da Michi! 💙</span>
+            <span className="text-xl">🧦 🧸</span> <span className="text-lg">Grazie da Michi! 💙</span>
           </div>
         </div>
       )}
