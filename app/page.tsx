@@ -111,7 +111,6 @@ export default function BabyRegistry() {
     }
   };
 
-  // Nuova funzione per gestire la cancellazione post-password
   const handleAdminDelete = () => {
     if (adminPassInput === ADMIN_PASSWORD) {
         if (wishToDelete) deleteWish(wishToDelete);
@@ -164,6 +163,7 @@ export default function BabyRegistry() {
         setWishes(wishes.filter(w => w.id !== id));
         setWishToDelete(null);
         setAdminPassInput("");
+        setWishModalOpen(false);
     }
   };
 
@@ -369,31 +369,31 @@ export default function BabyRegistry() {
                 {wishes.map((w) => (
                     <div key={w.id} className={`relative rounded-3xl p-4 shadow-md border flex items-center gap-4 transition-all overflow-hidden ${w.is_purchased ? 'bg-gray-100 border-gray-200 grayscale-[0.8]' : 'bg-white border-blue-100'}`}>
                         {w.is_purchased && (
-                          <div className="absolute inset-0 bg-gray-400/20 pointer-events-none z-10" />
-                        )}
-                        {w.is_purchased && (
-                          <div className="absolute top-2 right-2 z-20">
-                             <span className="bg-red-500 text-white px-3 py-1 rounded-full font-bold text-[10px] shadow-lg border border-white uppercase flex items-center gap-1">Regalo Preso! 🎁</span>
-                          </div>
+                          <>
+                            <div className="absolute inset-0 bg-gray-400/20 pointer-events-none z-10" />
+                            <div className="absolute top-3 right-3 z-30">
+                               <span className="bg-red-500 text-white px-3 py-1 rounded-full font-bold text-[10px] shadow-lg border border-white uppercase flex items-center gap-1">Regalo Preso! 🎁</span>
+                            </div>
+                          </>
                         )}
                         
                         <div className="w-20 h-20 rounded-2xl overflow-hidden bg-sky-50 flex-shrink-0">
                            <img src={w.image_url} className={`w-full h-full object-cover ${w.is_purchased ? 'opacity-50' : ''}`} alt={w.name} onError={(e) => e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(w.name)}&background=f0f9ff&color=0369a1`} />
                         </div>
                         
-                        <div className="flex-1 overflow-hidden relative min-h-[80px]">
-                            <h3 className={`font-sans font-bold text-blue-900 truncate pr-20 ${w.is_purchased ? 'line-through text-gray-500' : ''}`}>{w.name}</h3>
+                        <div className="flex-1 overflow-hidden relative min-h-[85px]">
+                            <h3 className={`font-sans font-bold text-blue-900 truncate pr-24 ${w.is_purchased ? 'line-through text-gray-500' : ''}`}>{w.name}</h3>
                             {w.link && !w.is_purchased && (
                                 <a href={w.link} target="_blank" className="text-blue-500 text-xs flex items-center gap-1 mt-1 underline"><ExternalLink size={12} /> Vedi Prodotto</a>
                             )}
-                            <div className="flex items-center gap-2 mt-3">
+                            <div className="flex items-center gap-2 mt-4">
                                 {(!w.is_purchased || myPurchasedWishIds.includes(w.id)) && (
                                   <button onClick={() => togglePurchased(w.id, w.is_purchased)} className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded-full transition-all z-20 ${w.is_purchased ? 'bg-white text-red-500 border border-red-200 shadow-sm' : 'bg-sky-100 text-blue-600'}`}>
                                       {w.is_purchased ? 'Ho cambiato idea' : 'Segna come Acquistato'}
                                   </button>
                                 )}
                             </div>
-                            <button onClick={() => { setWishToDelete(w.id); setWishModalOpen(true); }} className="absolute bottom-0 right-0 p-1 text-red-300 hover:text-red-500 z-20"><Trash2 size={18} /></button>
+                            <button onClick={() => { setWishToDelete(w.id); setWishModalOpen(true); }} className="absolute bottom-0 right-0 p-1 text-red-400 hover:text-red-600 z-30"><Trash2 size={18} /></button>
                         </div>
                     </div>
                 ))}
