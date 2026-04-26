@@ -50,6 +50,7 @@ export default function BabyRegistry() {
   // Local Storage IDs
   const [myMessageIds, setMyMessageIds] = useState<number[]>([]);
   const [myPhotoIds, setMyPhotoIds] = useState<number[]>([]);
+  const [myPurchasedWishIds, setMyPurchasedWishIds] = useState<number[]>([]); // Modifica: tracciamento regali presi da me
   const [myPhotoReactions, setMyPhotoReactions] = useState<Record<number, string>>({});
   const [myMsgReactions, setMyMsgReactions] = useState<Record<number, string>>({});
 
@@ -57,6 +58,10 @@ export default function BabyRegistry() {
   useEffect(() => {
     const authStatus = localStorage.getItem("baby_auth");
     if (authStatus === "true") setIsAuthenticated(true);
+
+    // Modifica: Persistenza sezione al refresh
+    const savedView = localStorage.getItem("last_view");
+    if (savedView) setCurrentView(savedView as any);
 
     const savedMsgs = localStorage.getItem("my_messages");
     if (savedMsgs) setMyMessageIds(JSON.parse(savedMsgs));
@@ -66,7 +71,16 @@ export default function BabyRegistry() {
     if (savedPReac) setMyPhotoReactions(JSON.parse(savedPReac));
     const savedMReac = localStorage.getItem("my_m_reac");
     if (savedMReac) setMyMsgReactions(JSON.parse(savedMReac));
+    
+    // Modifica: Recupero ID desideri acquistati da me
+    const savedPurchased = localStorage.getItem("my_purchased_wishes");
+    if (savedPurchased) setMyPurchasedWishIds(JSON.parse(savedPurchased));
   }, []);
+
+  // Modifica: Salva la vista corrente ogni volta che cambia
+  useEffect(() => {
+    localStorage.setItem("last_view", currentView);
+  }, [currentView]);
 
   const fetchData = async () => {
     const { data: pData } = await supabase.from("Photos").select("*").order("created_at", { ascending: false });
@@ -87,7 +101,7 @@ export default function BabyRegistry() {
   const handleLogin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (passwordInput === ACCESS_PASSWORD) {
-      localStorage.setItem("baby_auth", "true");
+     localStorage.setItem("baby_auth", "true");
       setIsAuthenticated(true);
     } else {
       setPassError(true);
@@ -132,9 +146,25 @@ export default function BabyRegistry() {
   };
 
   const togglePurchased = async (id: number, currentStatus: boolean) => {
+    // Modifica: Controllo permessi per annullare l'acquisto
+    if (currentStatus && !myPurchasedWishIds.includes(id)) {
+        alert("Solo chi ha segnato il regalo come acquistato può annullare questa azione.");
+        return;
+    }
+
     const { error } = await supabase.from("Wishes").update({ is_purchased: !currentStatus }).eq('id', id);
     if (!error) {
         setWishes(wishes.map(w => w.id === id ? { ...w, is_purchased: !currentStatus } : w));
+        
+        // Aggiorna storage locale per identificare chi ha fatto l'azione
+        let updatedIds = [...myPurchasedWishIds];
+        if (!currentStatus) {
+            updatedIds.push(id);
+        } else {
+            updatedIds = updatedIds.filter(item => item !== id);
+        }
+        setMyPurchasedWishIds(updatedIds);
+        localStorage.setItem("my_purchased_wishes", JSON.stringify(updatedIds));
     }
   };
 
@@ -152,7 +182,7 @@ export default function BabyRegistry() {
   };
 
   // LOGICA MESSAGGI E FOTO
-  const addMessage = useCallback(async () => { 
+  const addMessage = useCallback(async () => {
     if (!message.trim()) return; 
     const finalMsg = signature.trim() ? `${message.trim()} \n\n— ${signature.trim()}` : message.trim();
     const { data, error } = await supabase.from("baby-registry").insert([{ text: finalMsg, reactions: {} }]).select().single(); 
@@ -313,7 +343,7 @@ export default function BabyRegistry() {
 
       <div className="w-full max-w-md space-y-5 z-10 relative px-2"> 
         
-        {/* 1. BOX MESSAGGI (ORA PRIMO NELLA HOME) */}
+        {/* 1. BOX MESSAGGI */}
         {(currentView === 'all' || currentView === 'messages') && (
             <div className={CARD}> 
               <h2 className={`text-lg font-semibold ${PRIMARY}`}>💌 Messaggi</h2> 
@@ -321,7 +351,7 @@ export default function BabyRegistry() {
               <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Tua firma (opzionale)" className="mt-2 text-sm italic" /> 
               <Button onClick={addMessage} className={`mt-3 ${BTN}`}>Invia 💙</Button> 
               <div className="space-y-4 mt-6 border-t border-blue-100 pt-4"> 
-                {messages.slice(0, currentView === 'all' ? 5 : undefined).map((m) => (  
+                {messages.slice(0, currentView === 'all' ? 5 : undefined).map((m) => ( 
                     <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
                         <div className="flex justify-between items-start gap-2 mb-2">
                             <span className="text-sm whitespace-pre-wrap font-sans">{m.text}</span>
@@ -343,17 +373,17 @@ export default function BabyRegistry() {
               {currentView === 'all' && (
                   <Button variant="ghost" onClick={() => setCurrentView('messages')} className="w-full mt-4 text-blue-400 text-xs uppercase font-bold">Vedi tutti i messaggi</Button>
               )}
-            </div> 
+           </div> 
         )}
 
-        {/* 2. BOX PENSIERO E LISTA (ORA SECONDO NELLA HOME) */}
+        {/* 2. BOX PENSIERO E LISTA */}
         {currentView === 'all' && (
             <div className={CARD}> 
               <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
               <p className="mt-2 text-sm text-blue-800/80 italic">Se desideri partecipare con un pensiero clicca sotto</p>
               <Button onClick={() => setPaymentOpen(true)} className={`mt-3 ${BTN}`}>Un pensiero per Michi 🧸</Button>
               <Button onClick={() => setCurrentView('wishes')} className={`mt-3 ${BTN}`}>Lista dei desideri 🎁</Button>
-            </div> 
+           </div> 
         )}
 
         {/* VISTA LISTA DESIDERI DETTAGLIATA */}
@@ -361,28 +391,36 @@ export default function BabyRegistry() {
             <div className="space-y-4 animate-center-pop-mobile">
                 {wishes.length === 0 && <p className="text-center italic opacity-50 pt-10">La lista è in fase di allestimento... 🧸</p>}
                 {wishes.map((w) => (
-                    <div key={w.id} className={`relative bg-white rounded-3xl p-4 shadow-md border flex items-center gap-4 transition-all overflow-hidden ${w.is_purchased ? 'border-red-200 opacity-90' : 'border-blue-100'}`}>
+                    // Modifica: bg-gray-200 e grayscale se acquistato
+                    <div key={w.id} className={`relative rounded-3xl p-4 shadow-md border flex items-center gap-4 transition-all overflow-hidden ${w.is_purchased ? 'bg-gray-100 border-gray-200 grayscale-[0.8]' : 'bg-white border-blue-100'}`}>
                         {w.is_purchased && (
-                          <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] flex items-center justify-center z-10">
-                             <span className="bg-red-500 text-white px-4 py-1 rounded-full font-bold text-sm rotate-[-10deg] shadow-lg border-2 border-white uppercase">Regalo Preso! 🎁</span>
+                          // Modifica: Badge in alto a destra e oscuramento
+                          <div className="absolute inset-0 bg-gray-400/20 pointer-events-none z-10" />
+                        )}
+                        {w.is_purchased && (
+                          <div className="absolute top-2 right-2 z-20">
+                             <span className="bg-red-500 text-white px-3 py-1 rounded-full font-bold text-[10px] shadow-lg border border-white uppercase flex items-center gap-1">Regalo Preso! 🎁</span>
                           </div>
                         )}
                         
                         <div className="w-20 h-20 rounded-2xl overflow-hidden bg-sky-50 flex-shrink-0">
-                           <img src={w.image_url} className={`w-full h-full object-cover ${w.is_purchased ? 'grayscale' : ''}`} alt={w.name} onError={(e) => e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(w.name)}&background=f0f9ff&color=0369a1`} />
+                           <img src={w.image_url} className={`w-full h-full object-cover ${w.is_purchased ? 'opacity-50' : ''}`} alt={w.name} onError={(e) => e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(w.name)}&background=f0f9ff&color=0369a1`} />
                         </div>
                         
-                        <div className="flex-1 overflow-hidden">
-                            <h3 className={`font-sans font-bold text-blue-900 truncate ${w.is_purchased ? 'line-through text-gray-400' : ''}`}>{w.name}</h3>
+                        <div className="flex-1 overflow-hidden relative">
+                            <h3 className={`font-sans font-bold text-blue-900 truncate ${w.is_purchased ? 'line-through text-gray-500' : ''}`}>{w.name}</h3>
                             {w.link && !w.is_purchased && (
                                 <a href={w.link} target="_blank" className="text-blue-500 text-xs flex items-center gap-1 mt-1 underline"><ExternalLink size={12} /> Vedi Prodotto</a>
                             )}
                             <div className="flex items-center gap-2 mt-3">
-                                <button onClick={() => togglePurchased(w.id, w.is_purchased)} className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded-full transition-all z-20 ${w.is_purchased ? 'bg-red-500 text-white' : 'bg-sky-100 text-blue-600'}`}>
-                                    {w.is_purchased ? 'Ho cambiato idea' : 'Segna come Acquistato'}
-                                </button>
-                                <button onClick={() => setWishToDelete(w.id)} className="p-2 text-red-300 hover:text-red-500 z-20"><Trash2 size={16} /></button>
+                                {(!w.is_purchased || myPurchasedWishIds.includes(w.id)) && (
+                                  <button onClick={() => togglePurchased(w.id, w.is_purchased)} className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded-full transition-all z-20 ${w.is_purchased ? 'bg-white text-red-500 border border-red-200 shadow-sm' : 'bg-sky-100 text-blue-600'}`}>
+                                      {w.is_purchased ? 'Ho cambiato idea' : 'Segna come Acquistato'}
+                                  </button>
+                                )}
                             </div>
+                            {/* Modifica: Pulsante cancella in basso a destra */}
+                            <button onClick={() => setWishToDelete(w.id)} className="absolute bottom-0 right-0 p-1 text-red-300 hover:text-red-500 z-20"><Trash2 size={16} /></button>
                         </div>
                     </div>
                 ))}
@@ -418,7 +456,7 @@ export default function BabyRegistry() {
                 {currentView === 'all' && (
                     <Button variant="ghost" onClick={() => setCurrentView('photos')} className="w-full mt-4 text-blue-400 text-xs uppercase font-bold">Vedi tutti i ricordi</Button>
                 )}
-            </div> 
+           </div> 
         )}
       </div> 
 
@@ -500,7 +538,7 @@ export default function BabyRegistry() {
                         if (type === 'photo') setPhotos(prev => prev.filter(p => p.id !== id));
                         else setMessages(prev => prev.filter(m => m.id !== id));
                         setDeleteConfirm(null);
-                    }}>Elimina</Button>
+                   }}>Elimina</Button>
                 </div>
             </div>
         </div>
@@ -509,7 +547,7 @@ export default function BabyRegistry() {
       {showThanks && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/10 backdrop-blur-sm px-6">
           <div className="bg-white p-6 rounded-2xl shadow-2xl animate-center-pop-mobile text-blue-800 font-bold flex items-center gap-3">
-            <span className="text-xl">🧦 🧸</span> <span className="text-lg">Grazie da Michi! 💙</span>
+            <span className="text-xl">🧦 🧸</span> <span className="text-lg">Grazie da Michi!💙</span>
           </div>
         </div>
       )}
