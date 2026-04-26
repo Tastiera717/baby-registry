@@ -355,7 +355,7 @@ export default function BabyRegistry() {
         {currentView === 'all' && (
             <div className={CARD}> 
               <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
-              <p className="mt-2 text-sm text-blue-800/80 italic">Se desideri partecipare con un contributo libero clicca sotto</p>
+              <p className="mt-2 text-sm text-blue-800/80 italic">Se desideri partecipare con un pensiero clicca sotto...</p>
               <Button onClick={() => setPaymentOpen(true)} className={`mt-3 ${BTN}`}>Un pensiero per Michi 🧸</Button>
               <Button onClick={() => setCurrentView('wishes')} className={`mt-3 ${BTN}`}>Lista dei desideri 🎁</Button>
            </div> 
