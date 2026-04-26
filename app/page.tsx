@@ -50,7 +50,7 @@ export default function BabyRegistry() {
   // Local Storage IDs
   const [myMessageIds, setMyMessageIds] = useState<number[]>([]);
   const [myPhotoIds, setMyPhotoIds] = useState<number[]>([]);
-  const [myPurchasedWishIds, setMyPurchasedWishIds] = useState<number[]>([]); // Modifica: tracciamento regali presi da me
+  const [myPurchasedWishIds, setMyPurchasedWishIds] = useState<number[]>([]);
   const [myPhotoReactions, setMyPhotoReactions] = useState<Record<number, string>>({});
   const [myMsgReactions, setMyMsgReactions] = useState<Record<number, string>>({});
 
@@ -59,7 +59,6 @@ export default function BabyRegistry() {
     const authStatus = localStorage.getItem("baby_auth");
     if (authStatus === "true") setIsAuthenticated(true);
 
-    // Modifica: Persistenza sezione al refresh
     const savedView = localStorage.getItem("last_view");
     if (savedView) setCurrentView(savedView as any);
 
@@ -71,13 +70,10 @@ export default function BabyRegistry() {
     if (savedPReac) setMyPhotoReactions(JSON.parse(savedPReac));
     const savedMReac = localStorage.getItem("my_m_reac");
     if (savedMReac) setMyMsgReactions(JSON.parse(savedMReac));
-    
-    // Modifica: Recupero ID desideri acquistati da me
     const savedPurchased = localStorage.getItem("my_purchased_wishes");
     if (savedPurchased) setMyPurchasedWishIds(JSON.parse(savedPurchased));
   }, []);
 
-  // Modifica: Salva la vista corrente ogni volta che cambia
   useEffect(() => {
     localStorage.setItem("last_view", currentView);
   }, [currentView]);
@@ -85,10 +81,8 @@ export default function BabyRegistry() {
   const fetchData = async () => {
     const { data: pData } = await supabase.from("Photos").select("*").order("created_at", { ascending: false });
     if (pData) setPhotos(pData.map(p => ({ ...p, reactions: p.reactions || {} })));
-    
     const { data: mData } = await supabase.from("baby-registry").select("*").order("created_at", { ascending: false });
     if (mData) setMessages(mData.map(m => ({ ...m, reactions: m.reactions || {} })));
-
     const { data: wData } = await supabase.from("Wishes").select("*").order("created_at", { ascending: false });
     if (wData) setWishes(wData);
   };
@@ -97,7 +91,6 @@ export default function BabyRegistry() {
     if (isAuthenticated) fetchData();
   }, [isAuthenticated]);
 
-  // LOGICA LOGIN
   const handleLogin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (passwordInput === ACCESS_PASSWORD) {
@@ -109,7 +102,6 @@ export default function BabyRegistry() {
     }
   };
 
-  // LOGICA DESIDERI
   const checkAdminPass = () => {
     if (adminPassInput === ADMIN_PASSWORD) {
         setIsAddingWish(true);
@@ -119,24 +111,30 @@ export default function BabyRegistry() {
     }
   };
 
+  // Nuova funzione per gestire la cancellazione post-password
+  const handleAdminDelete = () => {
+    if (adminPassInput === ADMIN_PASSWORD) {
+        if (wishToDelete) deleteWish(wishToDelete);
+    } else {
+        alert("Password errata!");
+    }
+  };
+
   const addWish = async () => {
     if (!newWish.name) return;
     let imgUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(newWish.name)}&background=f0f9ff&color=0369a1&size=256`;
-    
     if (newWish.link) {
         try { 
           const domain = new URL(newWish.link).hostname;
           imgUrl = `https://logo.clearbit.com/${domain}`; 
         } catch(e) {}
     }
-    
     const { data, error } = await supabase.from("Wishes").insert([{ 
         name: newWish.name, 
         link: newWish.link, 
         image_url: imgUrl,
         is_purchased: false 
     }]).select().single();
-
     if (!error && data) {
         setWishes([data, ...wishes]);
         setWishModalOpen(false);
@@ -146,33 +144,21 @@ export default function BabyRegistry() {
   };
 
   const togglePurchased = async (id: number, currentStatus: boolean) => {
-    // Modifica: Controllo permessi per annullare l'acquisto
     if (currentStatus && !myPurchasedWishIds.includes(id)) {
         alert("Solo chi ha segnato il regalo come acquistato può annullare questa azione.");
         return;
     }
-
     const { error } = await supabase.from("Wishes").update({ is_purchased: !currentStatus }).eq('id', id);
     if (!error) {
         setWishes(wishes.map(w => w.id === id ? { ...w, is_purchased: !currentStatus } : w));
-        
-        // Aggiorna storage locale per identificare chi ha fatto l'azione
         let updatedIds = [...myPurchasedWishIds];
-        if (!currentStatus) {
-            updatedIds.push(id);
-        } else {
-            updatedIds = updatedIds.filter(item => item !== id);
-        }
+        if (!currentStatus) { updatedIds.push(id); } else { updatedIds = updatedIds.filter(item => item !== id); }
         setMyPurchasedWishIds(updatedIds);
         localStorage.setItem("my_purchased_wishes", JSON.stringify(updatedIds));
     }
   };
 
   const deleteWish = async (id: number) => {
-    if (adminPassInput !== ADMIN_PASSWORD) {
-        alert("Password errata!");
-        return;
-    }
     const { error } = await supabase.from("Wishes").delete().eq('id', id);
     if (!error) {
         setWishes(wishes.filter(w => w.id !== id));
@@ -181,7 +167,6 @@ export default function BabyRegistry() {
     }
   };
 
-  // LOGICA MESSAGGI E FOTO
   const addMessage = useCallback(async () => {
     if (!message.trim()) return; 
     const finalMsg = signature.trim() ? `${message.trim()} \n\n— ${signature.trim()}` : message.trim();
@@ -230,7 +215,6 @@ export default function BabyRegistry() {
     const myCurrent = type === 'photo' ? myPhotoReactions : myMsgReactions;
     const prevEmoji = myCurrent[id];
     let updatedMy = { ...myCurrent };
-
     if (prevEmoji === emoji) {
         currentReactions[emoji] = Math.max(0, (Number(currentReactions[emoji]) || 1) - 1);
         delete updatedMy[id];
@@ -239,7 +223,6 @@ export default function BabyRegistry() {
         currentReactions[emoji] = (Number(currentReactions[emoji]) || 0) + 1;
         updatedMy[id] = emoji;
     }
-
     const table = type === 'photo' ? "Photos" : "baby-registry";
     const { error } = await supabase.from(table).update({ reactions: currentReactions }).eq('id', id);
     if (!error) {
@@ -262,7 +245,6 @@ export default function BabyRegistry() {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  // SCHERMATA LOGIN
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center p-6 bg-sky-50 relative font-dreaming text-center overflow-hidden">
@@ -280,7 +262,6 @@ export default function BabyRegistry() {
     );
   }
 
-  // APP PRINCIPALE
   return ( 
     <div className="min-h-screen w-full flex flex-col items-center p-4 relative font-dreaming text-blue-800 overflow-x-hidden pb-20"> 
       <style>{` 
@@ -304,7 +285,6 @@ export default function BabyRegistry() {
         )}
       </div>
 
-      {/* MENU LATERALE */}
       <div className={`fixed inset-0 z-[200] transition-opacity duration-300 ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
           <div className="absolute inset-0 bg-blue-900/20 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
           <div className={`absolute top-0 left-0 h-full w-72 bg-white transition-transform duration-300 p-6 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -320,7 +300,6 @@ export default function BabyRegistry() {
 
       {musicOn && <iframe title="music" src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0`} allow="autoplay" className="hidden" />} 
 
-      {/* HEADER */}
       <div className="relative z-10 text-center mt-20 mb-6 px-4"> 
           {currentView === 'all' ? (
               <>
@@ -343,7 +322,6 @@ export default function BabyRegistry() {
 
       <div className="w-full max-w-md space-y-5 z-10 relative px-2"> 
         
-        {/* 1. BOX MESSAGGI */}
         {(currentView === 'all' || currentView === 'messages') && (
             <div className={CARD}> 
               <h2 className={`text-lg font-semibold ${PRIMARY}`}>💌 Messaggi</h2> 
@@ -376,7 +354,6 @@ export default function BabyRegistry() {
            </div> 
         )}
 
-        {/* 2. BOX PENSIERO E LISTA */}
         {currentView === 'all' && (
             <div className={CARD}> 
               <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
@@ -386,15 +363,12 @@ export default function BabyRegistry() {
            </div> 
         )}
 
-        {/* VISTA LISTA DESIDERI DETTAGLIATA */}
         {currentView === 'wishes' && (
             <div className="space-y-4 animate-center-pop-mobile">
                 {wishes.length === 0 && <p className="text-center italic opacity-50 pt-10">La lista è in fase di allestimento... 🧸</p>}
                 {wishes.map((w) => (
-                    // Modifica: bg-gray-200 e grayscale se acquistato
                     <div key={w.id} className={`relative rounded-3xl p-4 shadow-md border flex items-center gap-4 transition-all overflow-hidden ${w.is_purchased ? 'bg-gray-100 border-gray-200 grayscale-[0.8]' : 'bg-white border-blue-100'}`}>
                         {w.is_purchased && (
-                          // Modifica: Badge in alto a destra e oscuramento
                           <div className="absolute inset-0 bg-gray-400/20 pointer-events-none z-10" />
                         )}
                         {w.is_purchased && (
@@ -407,8 +381,8 @@ export default function BabyRegistry() {
                            <img src={w.image_url} className={`w-full h-full object-cover ${w.is_purchased ? 'opacity-50' : ''}`} alt={w.name} onError={(e) => e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(w.name)}&background=f0f9ff&color=0369a1`} />
                         </div>
                         
-                        <div className="flex-1 overflow-hidden relative">
-                            <h3 className={`font-sans font-bold text-blue-900 truncate ${w.is_purchased ? 'line-through text-gray-500' : ''}`}>{w.name}</h3>
+                        <div className="flex-1 overflow-hidden relative min-h-[80px]">
+                            <h3 className={`font-sans font-bold text-blue-900 truncate pr-20 ${w.is_purchased ? 'line-through text-gray-500' : ''}`}>{w.name}</h3>
                             {w.link && !w.is_purchased && (
                                 <a href={w.link} target="_blank" className="text-blue-500 text-xs flex items-center gap-1 mt-1 underline"><ExternalLink size={12} /> Vedi Prodotto</a>
                             )}
@@ -419,15 +393,13 @@ export default function BabyRegistry() {
                                   </button>
                                 )}
                             </div>
-                            {/* Modifica: Pulsante cancella in basso a destra */}
-                            <button onClick={() => setWishToDelete(w.id)} className="absolute bottom-0 right-0 p-1 text-red-300 hover:text-red-500 z-20"><Trash2 size={16} /></button>
+                            <button onClick={() => { setWishToDelete(w.id); setWishModalOpen(true); }} className="absolute bottom-0 right-0 p-1 text-red-300 hover:text-red-500 z-20"><Trash2 size={18} /></button>
                         </div>
                     </div>
                 ))}
             </div>
         )}
 
-        {/* BOX RICORDI */}
         {(currentView === 'all' || currentView === 'photos') && (
             <div className={CARD}> 
                 <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
@@ -460,7 +432,6 @@ export default function BabyRegistry() {
         )}
       </div> 
 
-      {/* MODALE PENSIERO (COORDINATE) */}
       {paymentOpen && ( 
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] px-4" onClick={() => setPaymentOpen(false)}> 
           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-center-pop-mobile" onClick={(e) => e.stopPropagation()}> 
@@ -481,7 +452,6 @@ export default function BabyRegistry() {
         </div> 
       )} 
 
-      {/* MODALE AGGIUNGI DESIDERIO */}
       {wishModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-center-pop-mobile">
@@ -491,8 +461,8 @@ export default function BabyRegistry() {
                         <h3 className="text-xl font-bold mb-4 font-sans">Area Genitori</h3>
                         <Input type="password" placeholder="Inserisci Password..." value={adminPassInput} onChange={(e) => setAdminPassInput(e.target.value)} className="mb-4 text-center" />
                         <div className="flex gap-2">
-                            <Button variant="ghost" onClick={() => setWishModalOpen(false)} className="flex-1 font-sans">Annulla</Button>
-                            <Button onClick={checkAdminPass} className="flex-1 bg-blue-500 font-sans">Conferma</Button>
+                            <Button variant="ghost" onClick={() => { setWishModalOpen(false); setWishToDelete(null); }} className="flex-1 font-sans">Annulla</Button>
+                            <Button onClick={wishToDelete ? handleAdminDelete : checkAdminPass} className={`flex-1 font-sans ${wishToDelete ? 'bg-red-500 text-white' : 'bg-blue-500'}`}>Conferma</Button>
                         </div>
                     </div>
                 ) : (
@@ -508,22 +478,6 @@ export default function BabyRegistry() {
         </div>
       )}
 
-      {/* MODALE CANCELLA DESIDERIO */}
-      {wishToDelete && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] px-6">
-            <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-center-pop-mobile text-center">
-                <AlertCircle className="mx-auto mb-4 text-red-500" />
-                <h3 className="font-bold mb-4 font-sans">Conferma eliminazione</h3>
-                <Input type="password" placeholder="Inserisci Password..." value={adminPassInput} onChange={(e) => setAdminPassInput(e.target.value)} className="mb-4 text-center" />
-                <div className="flex gap-2">
-                    <Button variant="ghost" onClick={() => setWishToDelete(null)} className="flex-1 font-sans">Annulla</Button>
-                    <Button onClick={() => deleteWish(wishToDelete)} className="flex-1 bg-red-500 font-sans">Elimina</Button>
-                </div>
-            </div>
-        </div>
-      )}
-
-      {/* MODALI GENERICI */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center border border-blue-50">
