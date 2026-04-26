@@ -20,21 +20,19 @@ const ADMIN_PASSWORD = "Babonzo@";
 type ViewType = 'all' | 'photos' | 'messages' | 'wishes';
 
 export default function BabyRegistry() { 
-  // State Messaggi e Foto
+  // State
   const [message, setMessage] = useState(""); 
   const [signature, setSignature] = useState(""); 
   const [messages, setMessages] = useState<{id: number, text: string, reactions?: any}[]>([]); 
   const [photos, setPhotos] = useState<{url: string, id: number, reactions?: any}[]>([]); 
-  
-  // State Lista Desideri
   const [wishes, setWishes] = useState<{id: number, name: string, link: string, image_url: string, is_purchased: boolean}[]>([]);
+  
   const [wishModalOpen, setWishModalOpen] = useState(false);
   const [isAddingWish, setIsAddingWish] = useState(false);
   const [newWish, setNewWish] = useState({ name: "", link: "" });
   const [adminPassInput, setAdminPassInput] = useState("");
   const [wishToDelete, setWishToDelete] = useState<number | null>(null);
 
-  // State UI/UX
   const [paymentOpen, setPaymentOpen] = useState(false); 
   const [musicOn, setMusicOn] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
@@ -42,26 +40,23 @@ export default function BabyRegistry() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>('all');
-  const [deleteConfirm, setDeleteConfirm] = useState<{id: number, type: 'photo' | 'msg'} | null>(null);
 
-  // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [passError, setPassError] = useState(false);
 
-  // Local Storage IDs
+  // Local Storage per sicurezza e persistenza refresh
   const [myMessageIds, setMyMessageIds] = useState<number[]>([]);
   const [myPhotoIds, setMyPhotoIds] = useState<number[]>([]);
   const [myPurchasedIds, setMyPurchasedIds] = useState<number[]>([]);
   const [myPhotoReactions, setMyPhotoReactions] = useState<Record<number, string>>({});
   const [myMsgReactions, setMyMsgReactions] = useState<Record<number, string>>({});
 
-  // INIZIALIZZAZIONE
   useEffect(() => {
     const authStatus = localStorage.getItem("baby_auth");
     if (authStatus === "true") setIsAuthenticated(true);
 
-    // Persistenza della pagina al refresh
+    // PERSISTENZA PAGINA AL REFRESH
     const savedView = localStorage.getItem("last_view") as ViewType;
     if (savedView) setCurrentView(savedView);
 
@@ -77,29 +72,23 @@ export default function BabyRegistry() {
     if (savedMReac) setMyMsgReactions(JSON.parse(savedMReac));
   }, []);
 
-  // Funzione per cambiare vista e salvare nel localStorage
   const changeView = (view: ViewType) => {
     setCurrentView(view);
-    localStorage.setItem("last_view", view);
+    localStorage.setItem("last_view", view); // Salva la vista corrente
     setIsMenuOpen(false);
   };
 
   const fetchData = async () => {
     const { data: pData } = await supabase.from("Photos").select("*").order("created_at", { ascending: false });
     if (pData) setPhotos(pData.map(p => ({ ...p, reactions: p.reactions || {} })));
-    
     const { data: mData } = await supabase.from("baby-registry").select("*").order("created_at", { ascending: false });
     if (mData) setMessages(mData.map(m => ({ ...m, reactions: m.reactions || {} })));
-
     const { data: wData } = await supabase.from("Wishes").select("*").order("created_at", { ascending: false });
     if (wData) setWishes(wData);
   };
 
-  useEffect(() => {
-    if (isAuthenticated) fetchData();
-  }, [isAuthenticated]);
+  useEffect(() => { if (isAuthenticated) fetchData(); }, [isAuthenticated]);
 
-  // LOGICA LOGIN
   const handleLogin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (passwordInput === ACCESS_PASSWORD) {
@@ -111,31 +100,7 @@ export default function BabyRegistry() {
     }
   };
 
-  // LOGICA DESIDERI
-  const checkAdminPass = () => {
-    if (adminPassInput === ADMIN_PASSWORD) {
-        setIsAddingWish(true);
-        setAdminPassInput("");
-    } else {
-        alert("Password errata!");
-    }
-  };
-
-  const addWish = async () => {
-    if (!newWish.name) return;
-    let imgUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(newWish.name)}&background=f0f9ff&color=0369a1&size=256`;
-    if (newWish.link) {
-        try { imgUrl = `https://logo.clearbit.com/${new URL(newWish.link).hostname}`; } catch(e) {}
-    }
-    const { data, error } = await supabase.from("Wishes").insert([{ name: newWish.name, link: newWish.link, image_url: imgUrl, is_purchased: false }]).select().single();
-    if (!error && data) {
-        setWishes([data, ...wishes]);
-        setWishModalOpen(false);
-        setIsAddingWish(false);
-        setNewWish({ name: "", link: "" });
-    }
-  };
-
+  // LOGICA DESIDERI (MODIFICATA)
   const togglePurchased = async (id: number, currentStatus: boolean) => {
     if (currentStatus && !myPurchasedIds.includes(id)) {
         alert("Solo chi ha segnato l'oggetto come acquistato può annullare l'azione! 😊");
@@ -151,13 +116,24 @@ export default function BabyRegistry() {
     }
   };
 
+  const checkAdminPass = () => {
+    if (adminPassInput === ADMIN_PASSWORD) { setIsAddingWish(true); setAdminPassInput(""); }
+    else { alert("Password errata!"); }
+  };
+
+  const addWish = async () => {
+    if (!newWish.name) return;
+    let imgUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(newWish.name)}&background=f0f9ff&color=0369a1&size=256`;
+    const { data, error } = await supabase.from("Wishes").insert([{ name: newWish.name, link: newWish.link, image_url: imgUrl, is_purchased: false }]).select().single();
+    if (!error && data) { setWishes([data, ...wishes]); setWishModalOpen(false); setIsAddingWish(false); setNewWish({ name: "", link: "" }); }
+  };
+
   const deleteWish = async (id: number) => {
     if (adminPassInput !== ADMIN_PASSWORD) { alert("Password errata!"); return; }
     const { error } = await supabase.from("Wishes").delete().eq('id', id);
     if (!error) { setWishes(wishes.filter(w => w.id !== id)); setWishToDelete(null); setAdminPassInput(""); }
   };
 
-  // LOGICA MESSAGGI E FOTO
   const addMessage = useCallback(async () => { 
     if (!message.trim()) return; 
     const finalMsg = signature.trim() ? `${message.trim()} \n\n— ${signature.trim()}` : message.trim();
@@ -238,7 +214,6 @@ export default function BabyRegistry() {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  // SCHERMATA LOGIN
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center p-6 bg-sky-50 relative font-dreaming text-center overflow-hidden">
@@ -256,7 +231,6 @@ export default function BabyRegistry() {
     );
   }
 
-  // APP PRINCIPALE
   return ( 
     <div className="min-h-screen w-full flex flex-col items-center p-4 relative font-dreaming text-blue-800 overflow-x-hidden pb-20"> 
       <style>{` 
@@ -294,20 +268,20 @@ export default function BabyRegistry() {
 
       {musicOn && <iframe title="music" src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0`} allow="autoplay" className="hidden" />} 
 
-      {/* HEADER */}
+      {/* HEADER CON TESTI ORIGINALI */}
       <div className="relative z-10 text-center mt-20 mb-6 px-4"> 
           {currentView === 'all' ? (
               <>
-                <h1 className="text-3xl font-bold">Benvenuto</h1> 
-                <h2 className="text-5xl font-extrabold mt-1 text-blue-900">Michele</h2> 
-                <div className="mt-6 space-y-4 text-base leading-relaxed max-w-sm mx-auto">
-                    <p>Abbiamo creato questo spazio per raccogliere i vostri <b>messaggi</b> e le <b>foto ricordo</b> più belle! 💙</p>
-                    <p>Se desiderate partecipare con un piccolo pensiero, ve ne saremo molto grati! 🦊</p>
+                <h1 className="text-3xl font-bold italic">In attesa di...</h1> 
+                <h2 className="text-6xl font-extrabold mt-1 text-blue-900">Michele</h2> 
+                <div className="mt-6 space-y-4 text-lg leading-relaxed max-w-sm mx-auto">
+                    <p>Abbiamo creato questo spazio per raccogliere i vostri <b>messaggi</b> e le <b>foto ricordo</b> più belle!</p>
+                    <p>E se desiderate partecipare con un piccolo pensiero alla nascita di Michele, ve ne saremo immensamente grati! 🦊</p>
                 </div>
-                <p className="mt-4 text-lg font-semibold border-t border-blue-200 pt-4 inline-block px-8 font-sans">9 Ottobre 2026</p> 
+                <p className="mt-4 text-xl font-semibold border-t border-blue-200 pt-4 inline-block px-8">9 Ottobre 2026</p> 
               </>
           ) : (
-              <h2 className="text-4xl font-extrabold text-blue-900">
+              <h2 className="text-4xl font-extrabold text-blue-900 uppercase">
                 {currentView === 'photos' && '📸 Ricordi'}
                 {currentView === 'messages' && '💌 Messaggi'}
                 {currentView === 'wishes' && '🎁 Lista Desideri'}
@@ -317,49 +291,16 @@ export default function BabyRegistry() {
 
       <div className="w-full max-w-md space-y-5 z-10 relative px-2"> 
         
-        {/* HOME: MESSAGGI PRIMA */}
-        {(currentView === 'all' || currentView === 'messages') && (
-            <div className={CARD}> 
-              <h2 className={`text-lg font-semibold ${PRIMARY}`}>💌 Messaggi</h2> 
-              <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi un messaggio" className="mt-2" /> 
-              <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Tua firma (opzionale)" className="mt-2 text-sm italic" /> 
-              <Button onClick={addMessage} className={`mt-3 ${BTN}`}>Invia 💙</Button> 
-              <div className="space-y-4 mt-6 border-t border-blue-100 pt-4"> 
-                {messages.slice(0, currentView === 'all' ? 5 : undefined).map((m) => (  
-                    <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
-                        <div className="flex justify-between items-start gap-2 mb-2">
-                            <span className="text-sm whitespace-pre-wrap font-sans">{m.text}</span>
-                            {myMessageIds.includes(m.id) && (
-                                <button onClick={() => setDeleteConfirm({id: m.id, type: 'msg'})} className="text-red-300 hover:text-red-500"><Trash2 size={14} /></button>
-                            )}
-                        </div>
-                        <div className="flex gap-4 pt-2">
-                            {REACTIONS.map(emoji => (
-                                <button key={emoji} onClick={() => handleGenericReaction(m.id, emoji, 'msg')} className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${myMsgReactions[m.id] === emoji ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
-                                    <span className="text-xs">{emoji}</span>
-                                    <span className="text-[10px] font-sans font-bold">{m.reactions?.[emoji] || 0}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div> 
-                ))} 
-              </div>
-              {currentView === 'all' && (
-                  <Button variant="ghost" onClick={() => changeView('messages')} className="w-full mt-4 text-blue-400 text-xs uppercase font-bold">Vedi tutti i messaggi</Button>
-              )}
-            </div> 
-        )}
-
-        {/* HOME: CONTRIBUTO SECONDO */}
+        {/* BOX CONTRIBUTO (TESTO ORIGINALE) */}
         {currentView === 'all' && (
             <div className={CARD}> 
-              <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
-              <Button onClick={() => setPaymentOpen(true)} className={`mt-3 ${BTN}`}>Un pensiero per Michi 🧸</Button>
+              <h2 className={`text-lg font-semibold text-center ${PRIMARY}`}>💝 Per aiutarci a accogliere Michele</h2> 
+              <Button onClick={() => setPaymentOpen(true)} className={`mt-3 ${BTN}`}>Fai un pensiero per Michele 🧸</Button>
               <Button onClick={() => changeView('wishes')} className={`mt-3 ${BTN}`}>Lista dei desideri 🎁</Button>
             </div> 
         )}
 
-        {/* VISTA DESIDERI */}
+        {/* LISTA DESIDERI (MODIFICATA COME RICHIESTO) */}
         {currentView === 'wishes' && (
             <div className="space-y-4 animate-center-pop-mobile">
                 {wishes.map((w) => (
@@ -392,12 +333,12 @@ export default function BabyRegistry() {
             </div>
         )}
 
-        {/* BOX RICORDI */}
+        {/* BOX RICORDI (TESTO ORIGINALE) */}
         {(currentView === 'all' || currentView === 'photos') && (
             <div className={CARD}> 
-                <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
+                <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Condividi i tuoi ricordi</h2> 
                 <input id="galleryInput" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" /> 
-                <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo ✨</Button> 
+                <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Carica i tuoi ricordi ✨</Button> 
                 <div className={`grid ${currentView === 'photos' ? 'grid-cols-2' : 'grid-cols-3'} gap-2 mt-4`}> 
                     {photos.slice(0, currentView === 'all' ? 6 : undefined).map((p) => ( 
                     <div key={p.id} className="relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border border-sky-200">
@@ -417,13 +358,46 @@ export default function BabyRegistry() {
                 </div> 
             </div> 
         )}
+
+        {/* BOX MESSAGGI */}
+        {(currentView === 'all' || currentView === 'messages') && (
+            <div className={CARD}> 
+              <h2 className={`text-lg font-semibold ${PRIMARY}`}>💌 Invia un messaggio a Michele</h2> 
+              <Input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi qui il tuo messaggio..." className="mt-2" /> 
+              <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Tua firma (opzionale)" className="mt-2 text-sm italic" /> 
+              <Button onClick={addMessage} className={`mt-3 ${BTN}`}>Invia Messaggio 💙</Button> 
+              <div className="space-y-4 mt-6 border-t border-blue-100 pt-4"> 
+                {messages.slice(0, currentView === 'all' ? 5 : undefined).map((m) => (  
+                    <div key={m.id} className="bg-white border border-blue-50 rounded-xl p-3 shadow-sm">
+                        <div className="flex justify-between items-start gap-2 mb-2">
+                            <span className="text-sm font-sans whitespace-pre-wrap">{m.text}</span>
+                            {myMessageIds.includes(m.id) && (
+                                <button onClick={async () => {
+                                    const { error } = await supabase.from("baby-registry").delete().eq('id', m.id);
+                                    if(!error) setMessages(messages.filter(x => x.id !== m.id));
+                                }} className="text-red-300 hover:text-red-500"><Trash2 size={14} /></button>
+                            )}
+                        </div>
+                        <div className="flex gap-4 pt-2">
+                            {REACTIONS.map(emoji => (
+                                <button key={emoji} onClick={() => handleGenericReaction(m.id, emoji, 'msg')} className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${myMsgReactions[m.id] === emoji ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
+                                    <span className="text-xs">{emoji}</span>
+                                    <span className="text-[10px] font-sans font-bold">{m.reactions?.[emoji] || 0}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div> 
+                ))} 
+              </div>
+            </div> 
+        )}
       </div> 
 
-      {/* MODALE PENSIERO */}
+      {/* MODALE PENSIERO (TESTO ORIGINALE) */}
       {paymentOpen && ( 
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] px-4" onClick={() => setPaymentOpen(false)}> 
           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-center-pop-mobile" onClick={(e) => e.stopPropagation()}> 
-            <h3 className="text-lg font-semibold mb-5 text-blue-800 text-center uppercase">🧸 Un pensiero per Michi</h3> 
+            <h3 className="text-lg font-semibold mb-5 text-blue-800 text-center uppercase tracking-wider">Un piccolo pensiero per Michele 🧸</h3> 
             <div className="space-y-3"> 
               <div className="p-4 bg-sky-50 rounded-2xl border flex justify-between items-center">
                 <div className="overflow-hidden"><p className="font-bold text-blue-400 text-[10px] uppercase mb-1">IBAN</p><p className="font-mono text-xs truncate">{IBAN}</p></div>
@@ -444,18 +418,18 @@ export default function BabyRegistry() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
                 {!isAddingWish ? (
-                    <div className="text-center">
+                    <div className="text-center font-sans">
                         <Lock className="mx-auto mb-4 text-blue-400" />
-                        <h3 className="text-xl font-bold mb-4 font-sans">Area Genitori</h3>
+                        <h3 className="text-xl font-bold mb-4">Area Genitori</h3>
                         <Input type="password" placeholder="Password Admin" value={adminPassInput} onChange={(e) => setAdminPassInput(e.target.value)} className="mb-4 text-center" />
                         <div className="flex gap-2">
                             <Button variant="ghost" onClick={() => setWishModalOpen(false)} className="flex-1">Annulla</Button>
-                            <Button onClick={checkAdminPass} className="flex-1 bg-blue-500">Conferma</Button>
+                            <Button onClick={checkAdminPass} className="flex-1 bg-blue-500">Entra</Button>
                         </div>
                     </div>
                 ) : (
                     <div className="space-y-4 font-sans">
-                        <h3 className="font-bold text-center">Nuovo Desiderio</h3>
+                        <h3 className="font-bold text-center text-lg">Nuovo Desiderio</h3>
                         <Input placeholder="Nome Oggetto" value={newWish.name} onChange={(e) => setNewWish({ ...newWish, name: e.target.value })} />
                         <Input placeholder="Link (opzionale)" value={newWish.link} onChange={(e) => setNewWish({ ...newWish, link: e.target.value })} />
                         <Button onClick={addWish} className="w-full bg-blue-500">Aggiungi ✨</Button>
@@ -466,8 +440,7 @@ export default function BabyRegistry() {
         </div>
       )}
 
-      {/* MODALE ZOOM FOTO */}
-      {selectedPhoto && <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999]" onClick={() => setSelectedPhoto(null)}><img src={selectedPhoto} className="max-w-full max-h-[90vh] object-contain rounded-lg" alt="Zoom" /></div>}
+      {selectedPhoto && <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999]" onClick={() => setSelectedPhoto(null)}><img src={selectedPhoto} className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" alt="Zoom" /></div>}
     </div> 
   ); 
 }
