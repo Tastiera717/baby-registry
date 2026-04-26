@@ -47,7 +47,7 @@ export default function BabyRegistry() {
   const [passwordInput, setPasswordInput] = useState("");
   const [passError, setPassError] = useState(false);
 
-  // Local Storage IDs (per eliminazione propria)
+  // Local Storage IDs
   const [myMessageIds, setMyMessageIds] = useState<number[]>([]);
   const [myPhotoIds, setMyPhotoIds] = useState<number[]>([]);
   const [myPhotoReactions, setMyPhotoReactions] = useState<Record<number, string>>({});
@@ -107,9 +107,13 @@ export default function BabyRegistry() {
 
   const addWish = async () => {
     if (!newWish.name) return;
-    let imgUrl = "https://placehold.co/400x400/sky/white?text=Regalo";
+    let imgUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(newWish.name)}&background=f0f9ff&color=0369a1&size=256`;
+    
     if (newWish.link) {
-        try { imgUrl = `https://logo.clearbit.com/${new URL(newWish.link).hostname}`; } catch(e) {}
+        try { 
+          const domain = new URL(newWish.link).hostname;
+          imgUrl = `https://logo.clearbit.com/${domain}`; 
+        } catch(e) {}
     }
     
     const { data, error } = await supabase.from("Wishes").insert([{ 
@@ -236,8 +240,7 @@ export default function BabyRegistry() {
         <div className="fixed inset-0 w-full h-full -z-10 bg-no-repeat bg-top opacity-30" style={{ backgroundImage: "url('/bg-mobile.png')", backgroundSize: "145%" }} />
         <div className="w-full max-w-sm bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-blue-100 animate-center-pop-mobile">
           <Lock size={35} className="mx-auto mb-6 text-blue-500" />
-          <h2 className="text-3xl font-extrabold text-blue-900 mb-2">Benvenuto</h2>
-          <p className="text-blue-800/70 mb-8 font-sans text-sm">Inserisci la parola magica per entrare nel mondo di Michele 💙</p>
+          <h2 className="text-4xl font-extrabold text-blue-900 mb-8 tracking-tight">Benvenuto</h2>
           <form onSubmit={handleLogin} className="space-y-4">
             <Input type="password" placeholder="La Password..." value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} className={`text-center py-6 rounded-2xl border-2 ${passError ? 'border-red-400' : 'border-blue-100'}`} />
             <Button onClick={() => handleLogin()} className={BTN}>Entra ✨</Button>
@@ -310,41 +313,7 @@ export default function BabyRegistry() {
 
       <div className="w-full max-w-md space-y-5 z-10 relative px-2"> 
         
-        {/* BOX PENSIERO (HOME) */}
-        {currentView === 'all' && (
-            <div className={CARD}> 
-              <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
-              <p className="mt-2 text-sm text-blue-800/80 italic">Se desideri partecipare con un pensiero clicca sotto</p>
-              <Button onClick={() => setPaymentOpen(true)} className={`mt-3 ${BTN}`}>Un pensiero per Michi 🧸</Button>
-              <Button onClick={() => setCurrentView('wishes')} className="mt-3 bg-white border-2 border-blue-100 text-blue-500 rounded-full py-4 text-lg shadow-sm w-full font-bold">Lista dei desideri 🎁</Button>
-            </div> 
-        )}
-
-        {/* VISTA LISTA DESIDERI */}
-        {currentView === 'wishes' && (
-            <div className="space-y-4 animate-center-pop-mobile">
-                {wishes.length === 0 && <p className="text-center italic opacity-50 pt-10">La lista è in fase di allestimento... 🧸</p>}
-                {wishes.map((w) => (
-                    <div key={w.id} className={`bg-white rounded-3xl p-4 shadow-md border flex items-center gap-4 transition-all ${w.is_purchased ? 'opacity-60 grayscale' : 'border-blue-100'}`}>
-                        <img src={w.image_url} className="w-20 h-20 rounded-2xl object-cover bg-sky-50" alt={w.name} />
-                        <div className="flex-1 overflow-hidden">
-                            <h3 className="font-sans font-bold text-blue-900 truncate">{w.name}</h3>
-                            {w.link && (
-                                <a href={w.link} target="_blank" className="text-blue-500 text-xs flex items-center gap-1 mt-1 underline"><ExternalLink size={12} /> Vedi Prodotto</a>
-                            )}
-                            <div className="flex items-center gap-2 mt-3">
-                                <button onClick={() => togglePurchased(w.id, w.is_purchased)} className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded-full transition-all ${w.is_purchased ? 'bg-green-500 text-white' : 'bg-sky-100 text-blue-600'}`}>
-                                    {w.is_purchased ? '✅ Acquistato' : 'Acquistato'}
-                                </button>
-                                <button onClick={() => setWishToDelete(w.id)} className="p-2 text-red-300 hover:text-red-500"><Trash2 size={16} /></button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        )}
-
-        {/* BOX MESSAGGI */}
+        {/* 1. BOX MESSAGGI (ORA PRIMO NELLA HOME) */}
         {(currentView === 'all' || currentView === 'messages') && (
             <div className={CARD}> 
               <h2 className={`text-lg font-semibold ${PRIMARY}`}>💌 Messaggi</h2> 
@@ -375,6 +344,49 @@ export default function BabyRegistry() {
                   <Button variant="ghost" onClick={() => setCurrentView('messages')} className="w-full mt-4 text-blue-400 text-xs uppercase font-bold">Vedi tutti i messaggi</Button>
               )}
             </div> 
+        )}
+
+        {/* 2. BOX PENSIERO E LISTA (ORA SECONDO NELLA HOME) */}
+        {currentView === 'all' && (
+            <div className={CARD}> 
+              <h2 className={`text-lg font-semibold ${PRIMARY}`}>💝 Per iniziare questa avventura</h2> 
+              <p className="mt-2 text-sm text-blue-800/80 italic">Se desideri partecipare con un pensiero clicca sotto</p>
+              <Button onClick={() => setPaymentOpen(true)} className={`mt-3 ${BTN}`}>Un pensiero per Michi 🧸</Button>
+              <Button onClick={() => setCurrentView('wishes')} className={`mt-3 ${BTN}`}>Lista dei desideri 🎁</Button>
+            </div> 
+        )}
+
+        {/* VISTA LISTA DESIDERI DETTAGLIATA */}
+        {currentView === 'wishes' && (
+            <div className="space-y-4 animate-center-pop-mobile">
+                {wishes.length === 0 && <p className="text-center italic opacity-50 pt-10">La lista è in fase di allestimento... 🧸</p>}
+                {wishes.map((w) => (
+                    <div key={w.id} className={`relative bg-white rounded-3xl p-4 shadow-md border flex items-center gap-4 transition-all overflow-hidden ${w.is_purchased ? 'border-red-200 opacity-90' : 'border-blue-100'}`}>
+                        {w.is_purchased && (
+                          <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] flex items-center justify-center z-10">
+                             <span className="bg-red-500 text-white px-4 py-1 rounded-full font-bold text-sm rotate-[-10deg] shadow-lg border-2 border-white uppercase">Regalo Preso! 🎁</span>
+                          </div>
+                        )}
+                        
+                        <div className="w-20 h-20 rounded-2xl overflow-hidden bg-sky-50 flex-shrink-0">
+                           <img src={w.image_url} className={`w-full h-full object-cover ${w.is_purchased ? 'grayscale' : ''}`} alt={w.name} onError={(e) => e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(w.name)}&background=f0f9ff&color=0369a1`} />
+                        </div>
+                        
+                        <div className="flex-1 overflow-hidden">
+                            <h3 className={`font-sans font-bold text-blue-900 truncate ${w.is_purchased ? 'line-through text-gray-400' : ''}`}>{w.name}</h3>
+                            {w.link && !w.is_purchased && (
+                                <a href={w.link} target="_blank" className="text-blue-500 text-xs flex items-center gap-1 mt-1 underline"><ExternalLink size={12} /> Vedi Prodotto</a>
+                            )}
+                            <div className="flex items-center gap-2 mt-3">
+                                <button onClick={() => togglePurchased(w.id, w.is_purchased)} className={`text-[10px] uppercase font-bold px-3 py-1.5 rounded-full transition-all z-20 ${w.is_purchased ? 'bg-red-500 text-white' : 'bg-sky-100 text-blue-600'}`}>
+                                    {w.is_purchased ? 'Ho cambiato idea' : 'Segna come Acquistato'}
+                                </button>
+                                <button onClick={() => setWishToDelete(w.id)} className="p-2 text-red-300 hover:text-red-500 z-20"><Trash2 size={16} /></button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
         )}
 
         {/* BOX RICORDI */}
@@ -431,7 +443,7 @@ export default function BabyRegistry() {
         </div> 
       )} 
 
-      {/* MODALE AGGIUNGI DESIDERIO (PASSWORD ADMIN) */}
+      {/* MODALE AGGIUNGI DESIDERIO */}
       {wishModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-center-pop-mobile">
@@ -447,7 +459,7 @@ export default function BabyRegistry() {
                     </div>
                 ) : (
                     <div className="space-y-4 font-sans">
-                        <h3 className="font-bold text-center">Nuovo Desiderio</h3>
+                        <h3 className="font-bold text-center text-blue-900">Nuovo Desiderio</h3>
                         <Input placeholder="Nome Oggetto (es. Passeggino)" value={newWish.name} onChange={(e) => setNewWish({ ...newWish, name: e.target.value })} />
                         <Input placeholder="Link Prodotto (opzionale)" value={newWish.link} onChange={(e) => setNewWish({ ...newWish, link: e.target.value })} />
                         <Button onClick={addWish} className="w-full bg-blue-500">Aggiungi ✨</Button>
@@ -458,7 +470,7 @@ export default function BabyRegistry() {
         </div>
       )}
 
-      {/* MODALE CANCELLA DESIDERIO (PASSWORD ADMIN) */}
+      {/* MODALE CANCELLA DESIDERIO */}
       {wishToDelete && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-[200] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-center-pop-mobile text-center">
@@ -473,7 +485,7 @@ export default function BabyRegistry() {
         </div>
       )}
 
-      {/* MODALI GENERICI (DELETE/THANKS/ZOOM) */}
+      {/* MODALI GENERICI */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[300] px-6">
             <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-center-pop-mobile text-center border border-blue-50">
