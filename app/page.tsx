@@ -394,7 +394,7 @@ export default function BabyRegistry() {
             <div className={CARD}> 
                 <h2 className={`text-lg font-semibold mb-3 ${PRIMARY}`}>📸 Ricordi</h2> 
                 <input id="galleryInput" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" /> 
-                <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo ✨</Button> 
+                <Button className={BTN} onClick={() => document.getElementById("galleryInput")?.click()}>Condividi un ricordo per Michi ✨</Button> 
                 <div className={`grid ${currentView === 'photos' ? 'grid-cols-2' : 'grid-cols-3'} gap-2 mt-4`}> 
                     {photos.slice(0, currentView === 'all' ? 6 : undefined).map((p) => ( 
                     <div key={p.id} className="relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border border-sky-200">
